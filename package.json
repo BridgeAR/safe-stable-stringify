@@ -1,0 +1,50 @@
+{
+  "name": "safe-stable-stringify",
+  "version": "1.0.0",
+  "description": "Deterministic and safely JSON.stringify to quickly serialize JavaScript objects",
+  "keywords": [
+    "stable",
+    "stringify",
+    "JSON",
+    "JSON.stringify",
+    "safe",
+    "serialize",
+    "deterministic",
+    "circular",
+    "object",
+    "predicable",
+    "repeatable",
+    "fast"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "test": "standard && tap test.js",
+    "benchmark": "node benchmark.js",
+    "compare": "node compare.js"
+  },
+  "author": "Ruben Bridgewater",
+  "license": "MIT",
+  "typings": "index",
+  "devDependencies": {
+    "@types/json-stable-stringify": "^1.0.32",
+    "benchmark": "^2.1.4",
+    "clone": "^2.1.0",
+    "fast-json-stable-stringify": "^2.0.0",
+    "fast-safe-stringify": "^2.0.2",
+    "fast-stable-stringify": "^1.0.0",
+    "faster-stable-stringify": "^1.0.0",
+    "json-stable-stringify": "^1.0.1",
+    "json-stringify-safe": "^5.0.1",
+    "standard": "^11.0.0-beta.0",
+    "tap": "^11.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BridgeAR/safe-stable-stringify.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BridgeAR/safe-stable-stringify/issues"
+  },
+  "homepage": "https://github.com/BridgeAR/safe-stable-stringify#readme",
+  "dependencies": {}
+}
