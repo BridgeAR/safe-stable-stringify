@@ -299,3 +299,63 @@ test('array replacer and indentation', function (assert) {
   assert.is(actual, expected)
   assert.end()
 })
+
+test('indent zero', function (assert) {
+  const expected = JSON.stringify({ f: null, null: true, 1: false }, null, 0)
+  const actual = stringify({ f: null, null: true, 1: false }, null, 0)
+  assert.is(actual, expected)
+  assert.end()
+})
+
+test('replacer and indentation without match', function (assert) {
+  const replacer = function (k, v) {
+    if (k === '') return v
+  }
+  const expected = JSON.stringify({ f: 1 }, replacer, '   ')
+  const actual = stringify({ f: 1 }, replacer, '   ')
+  assert.is(actual, expected)
+  assert.end()
+})
+
+test('array replacer and indentation without match', function (assert) {
+  const replacer = ['']
+  const expected = JSON.stringify({ f: 1 }, replacer, '   ')
+  const actual = stringify({ f: 1 }, replacer, '   ')
+  assert.is(actual, expected)
+  assert.end()
+})
+
+test('indentation without match', function (assert) {
+  const expected = JSON.stringify({ f: undefined }, undefined, 3)
+  const actual = stringify({ f: undefined }, undefined, 3)
+  assert.is(actual, expected)
+  assert.end()
+})
+
+test('array nulls and indentation', function (assert) {
+  const expected = JSON.stringify([null, null], undefined, 3)
+  const actual = stringify([null, null], undefined, 3)
+  assert.is(actual, expected)
+  assert.end()
+})
+
+test('array nulls, replacer and indentation', function (assert) {
+  const expected = JSON.stringify([null, null], (_, v) => v, 3)
+  const actual = stringify([null, null], (_, v) => v, 3)
+  assert.is(actual, expected)
+  assert.end()
+})
+
+test('array nulls, array replacer and indentation', function (assert) {
+  const expected = JSON.stringify([null, null], [false], 3)
+  const actual = stringify([null, null], [false], 3)
+  assert.is(actual, expected)
+  assert.end()
+})
+
+test('indentation with elements', function (assert) {
+  const expected = JSON.stringify({ a: 1 }, null, 5)
+  const actual = stringify({ a: 1 }, null, 5)
+  assert.is(actual, expected)
+  assert.end()
+})
