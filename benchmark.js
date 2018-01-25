@@ -2,7 +2,7 @@
 
 const Benchmark = require('benchmark')
 const suite = new Benchmark.Suite()
-const stringify = require('fast-safe-stringify').stable
+const stringify = require('.')
 
 const array = new Array(10).fill(0).map((_, i) => i)
 const obj = { array }
