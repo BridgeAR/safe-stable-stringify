@@ -71,21 +71,6 @@ array:   simple object x 1,470,751 ops/sec ±0.84% (95 runs sampled)
 array:   circular      x 1,360,269 ops/sec ±2.94% (91 runs sampled)
 array:   deep          x 1,289,785 ops/sec ±2.82% (87 runs sampled)
 array:   deep circular x 1,400,577 ops/sec ±1.00% (92 runs sampled)
-
-full replacer:   simple object x 993,352 ops/sec ±1.49% (92 runs sampled)
-full replacer:   circular      x 467,264 ops/sec ±0.68% (95 runs sampled)
-full replacer:   deep          x 14,855 ops/sec ±0.82% (91 runs sampled)
-full replacer:   deep circular x 14,608 ops/sec ±1.68% (95 runs sampled)
-
-full array:   simple object x 1,233,430 ops/sec ±0.58% (92 runs sampled)
-full array:   circular      x 1,205,360 ops/sec ±1.33% (90 runs sampled)
-full array:   deep          x 1,175,758 ops/sec ±0.63% (92 runs sampled)
-full array:   deep circular x 1,171,813 ops/sec ±1.08% (92 runs sampled)
-
-indentation:   simple object x 1,385,853 ops/sec ±2.18% (94 runs sampled)
-indentation:   circular      x 598,650 ops/sec ±1.26% (92 runs sampled)
-indentation:   deep          x 16,060 ops/sec ±0.76% (93 runs sampled)
-indentation:   deep circular x 15,784 ops/sec ±1.31% (95 runs sampled)
 ```
 
 Comparing `safe-stable-stringify` with known alternatives:
