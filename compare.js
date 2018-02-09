@@ -10,6 +10,7 @@ const stringifyPackages = {
   'json-stable-stringify': true,
   'fast-stable-stringify': true,
   'faster-stable-stringify': true,
+  'json-stringify-deterministic': true,
   'fast-safe-stringify': 'stable',
   'this': require('.')
 }
