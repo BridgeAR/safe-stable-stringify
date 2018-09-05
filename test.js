@@ -14,10 +14,10 @@ test('circular reference to root', function (assert) {
 })
 
 test('nested circular reference to root', function (assert) {
-  const fixture = { name: 'Tywin Lannister' }
+  const fixture = { name: 'Tywin\n\t"Lannister' }
   fixture.id = { circle: fixture }
   const expected = JSON.stringify(
-    { id: { circle: '[Circular]' }, name: 'Tywin Lannister' }
+    { id: { circle: '[Circular]' }, name: 'Tywin\n\t"Lannister' }
   )
   const actual = stringify(fixture)
   assert.is(actual, expected)
@@ -25,11 +25,11 @@ test('nested circular reference to root', function (assert) {
 })
 
 test('child circular reference', function (assert) {
-  const fixture = { name: 'Tywin Lannister', child: { name: 'Tyrion Lannister' } }
+  const fixture = { name: 'Tywin Lannister', child: { name: 'Tyrion\n\t"Lannister'.repeat(20) } }
   fixture.child.dinklage = fixture.child
   const expected = JSON.stringify({
     child: {
-      dinklage: '[Circular]', name: 'Tyrion Lannister'
+      dinklage: '[Circular]', name: 'Tyrion\n\t"Lannister'.repeat(20)
     },
     name: 'Tywin Lannister'
   })
@@ -294,8 +294,8 @@ test('array replacer', function (assert) {
 test('array replacer and indentation', function (assert) {
   const replacer = ['f', 1, null]
   // The null element will be removed!
-  const expected = JSON.stringify({ f: null, null: true, 1: false }, replacer, 2)
-  const actual = stringify({ f: null, null: true, 1: false }, replacer, 2)
+  const expected = JSON.stringify({ f: null, null: true, 1: [false, -Infinity, 't'] }, replacer, 2)
+  const actual = stringify({ f: null, null: true, 1: [false, -Infinity, 't'] }, replacer, 2)
   assert.is(actual, expected)
   assert.end()
 })
@@ -311,16 +311,16 @@ test('replacer and indentation without match', function (assert) {
   const replacer = function (k, v) {
     if (k === '') return v
   }
-  const expected = JSON.stringify({ f: 1 }, replacer, '   ')
-  const actual = stringify({ f: 1 }, replacer, '   ')
+  const expected = JSON.stringify({ f: 1, b: null, c: 't', d: Infinity, e: true }, replacer, '   ')
+  const actual = stringify({ f: 1, b: null, c: 't', d: Infinity, e: true }, replacer, '   ')
   assert.is(actual, expected)
   assert.end()
 })
 
 test('array replacer and indentation without match', function (assert) {
   const replacer = ['']
-  const expected = JSON.stringify({ f: 1 }, replacer, '   ')
-  const actual = stringify({ f: 1 }, replacer, '   ')
+  const expected = JSON.stringify({ f: 1, b: null, c: 't', d: Infinity, e: true }, replacer, '   ')
+  const actual = stringify({ f: 1, b: null, c: 't', d: Infinity, e: true }, replacer, '   ')
   assert.is(actual, expected)
   assert.end()
 })
@@ -340,8 +340,15 @@ test('array nulls and indentation', function (assert) {
 })
 
 test('array nulls, replacer and indentation', function (assert) {
-  const expected = JSON.stringify([null, null], (_, v) => v, 3)
-  const actual = stringify([null, null], (_, v) => v, 3)
+  const expected = JSON.stringify([null, Infinity, 5, true, false], (_, v) => v, 3)
+  const actual = stringify([null, Infinity, 5, true, false], (_, v) => v, 3)
+  assert.is(actual, expected)
+  assert.end()
+})
+
+test('array nulls and replacer', function (assert) {
+  const expected = JSON.stringify([null, Infinity, 5, true, false], (_, v) => v)
+  const actual = stringify([null, Infinity, 5, true, false], (_, v) => v)
   assert.is(actual, expected)
   assert.end()
 })
@@ -353,9 +360,16 @@ test('array nulls, array replacer and indentation', function (assert) {
   assert.end()
 })
 
+test('array and array replacer', function (assert) {
+  const expected = JSON.stringify([null, null, 't', Infinity, true, false], [2])
+  const actual = stringify([null, null, 't', Infinity, true, false], [2])
+  assert.is(actual, expected)
+  assert.end()
+})
+
 test('indentation with elements', function (assert) {
-  const expected = JSON.stringify({ a: 1 }, null, 5)
-  const actual = stringify({ a: 1 }, null, 5)
+  const expected = JSON.stringify({ a: 1, b: [null, 't', Infinity, true] }, null, 5)
+  const actual = stringify({ a: 1, b: [null, 't', Infinity, true] }, null, 5)
   assert.is(actual, expected)
   assert.end()
 })
