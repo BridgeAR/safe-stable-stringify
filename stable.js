@@ -25,7 +25,9 @@ const meta = [
   '', '', '', '', '', '', '', '\\\\'
 ]
 
-const escapeFn = (str) => meta[str.charCodeAt(0)]
+function escapeFn (str) {
+  return meta[str.charCodeAt(0)]
+}
 
 // Escape control characters, double quotes and the backslash.
 // Note: it is faster to run this only once for a big string instead of only for
@@ -124,7 +126,7 @@ function stringifyFullFn (key, parent, stack, replacer, indent) {
         res += `\n${gap}`
         join = `,\n${gap}`
       }
-      let separator = ''
+      var separator = ''
       for (i = 0; i < keys.length; i++) {
         key = keys[i]
         const tmp = stringifyFullFn(key, value, stack, replacer, indent)
@@ -214,7 +216,7 @@ function stringifyFullArr (key, value, stack, replacer, indent) {
         res += `\n${gap}`
         join = `,\n${gap}`
       }
-      let separator = ''
+      var separator = ''
       for (i = 0; i < replacer.length; i++) {
         if (typeof replacer[i] === 'string' || typeof replacer[i] === 'number') {
           key = replacer[i]
@@ -314,7 +316,7 @@ function stringifyIndent (key, value, stack, indent) {
         res += `\n${gap}`
         join = `,\n${gap}`
       }
-      let separator = ''
+      var separator = ''
       for (i = 0; i < keys.length; i++) {
         key = keys[i]
         const tmp = stringifyIndent(key, value[key], stack, indent)
@@ -386,7 +388,7 @@ function stringifyReplacerArr (key, value, stack, replacer) {
       }
       stack.push(value)
       res = '{'
-      let separator = ''
+      var separator = ''
       for (i = 0; i < replacer.length; i++) {
         if (typeof replacer[i] === 'string' || typeof replacer[i] === 'number') {
           key = replacer[i]
@@ -454,7 +456,7 @@ function stringifyReplacerFn (key, parent, stack, replacer) {
       }
       stack.push(value)
       res = '{'
-      let separator = ''
+      var separator = ''
       for (i = 0; i < keys.length; i++) {
         key = keys[i]
         const tmp = stringifyReplacerFn(key, value, stack, replacer)
@@ -524,7 +526,7 @@ function stringifySimple (key, value, stack) {
         return '{}'
       }
       stack.push(value)
-      let separator = ''
+      var separator = ''
       res = '{'
       for (i = 0; i < keys.length; i++) {
         key = keys[i]
