@@ -1,6 +1,6 @@
 {
   "name": "safe-stable-stringify",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Deterministic and safely JSON.stringify to quickly serialize JavaScript objects",
   "keywords": [
     "stable",
