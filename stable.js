@@ -559,18 +559,15 @@ function stringifySimple (key, value, stack) {
         return '{}'
       }
       stack.push(value)
+      let separator = ''
       res = '{'
-      for (i = 0; i < keys.length - 1; i++) {
+      for (i = 0; i < keys.length; i++) {
         key = keys[i]
         const tmp = stringifySimple(key, value[key], stack)
         if (tmp !== undefined) {
-          res += `"${strEscape(key)}":${tmp},`
+          res += `${separator}"${strEscape(key)}":${tmp}`
+          separator = ','
         }
-      }
-      key = keys[i]
-      const tmp = stringifySimple(key, value[key], stack)
-      if (tmp !== undefined) {
-        res += `"${strEscape(key)}":${tmp}`
       }
       res += '}'
       stack.pop()

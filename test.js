@@ -359,3 +359,21 @@ test('indentation with elements', function (assert) {
   assert.is(actual, expected)
   assert.end()
 })
+
+test('object with undefined values', function (assert) {
+  let obj, expected, actual
+
+  obj = { a: 1, c: undefined, b: 'hello' }
+
+  expected = JSON.stringify(obj)
+  actual = stringify(obj)
+  assert.is(actual, expected)
+
+  obj = { b: 'hello', a: undefined, c: 1 }
+
+  expected = JSON.stringify(obj)
+  actual = stringify(obj)
+  assert.is(actual, expected)
+
+  assert.end()
+})
