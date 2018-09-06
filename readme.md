@@ -1,5 +1,7 @@
 # safe-stable-stringify
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/BridgeAR/safe-stable-stringify.svg)](https://greenkeeper.io/)
+
 Safe, deterministic and fast serialization alternative to [JSON.stringify][].
 
 Gracefully handles circular structures instead of throwing.
