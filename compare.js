@@ -12,7 +12,7 @@ const stringifyPackages = {
   'faster-stable-stringify': true,
   'json-stringify-deterministic': true,
   'fast-safe-stringify': 'stable',
-  'this': require('.')
+  this: require('.')
 }
 
 for (const name in stringifyPackages) {

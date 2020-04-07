@@ -109,7 +109,7 @@ function stringifyFullFn (key, parent, stack, replacer, indent) {
         return res
       }
 
-      const keys = insertSort(Object.keys(value))
+      var keys = insertSort(Object.keys(value))
       if (keys.length === 0) {
         return '{}'
       }
@@ -280,7 +280,7 @@ function stringifyIndent (key, value, stack, indent) {
         return res
       }
 
-      const keys = insertSort(Object.keys(value))
+      var keys = insertSort(Object.keys(value))
       if (keys.length === 0) {
         return '{}'
       }
@@ -421,7 +421,7 @@ function stringifyReplacerFn (key, parent, stack, replacer) {
         return res
       }
 
-      const keys = insertSort(Object.keys(value))
+      var keys = insertSort(Object.keys(value))
       if (keys.length === 0) {
         return '{}'
       }
@@ -492,7 +492,7 @@ function stringifySimple (key, value, stack) {
         return res
       }
 
-      const keys = insertSort(Object.keys(value))
+      var keys = insertSort(Object.keys(value))
       if (keys.length === 0) {
         return '{}'
       }

@@ -309,7 +309,7 @@ test('array replacer', function (assert) {
   const replacer = ['f', 1, null]
   const obj = { f: null, null: true, 1: false }
   // The null element will be removed!
-  let expected = JSON.stringify(obj, replacer)
+  const expected = JSON.stringify(obj, replacer)
   let actual = stringify(obj, replacer)
   assert.is(actual, expected)
 
@@ -325,8 +325,8 @@ test('empty array replacer', function (assert) {
   const replacer = []
   const obj = { f: null, null: true, 1: false }
   // The null element will be removed!
-  let expected = JSON.stringify(obj, replacer)
-  let actual = stringify(obj, replacer)
+  const expected = JSON.stringify(obj, replacer)
+  const actual = stringify(obj, replacer)
   assert.is(actual, expected)
 
   assert.end()
@@ -467,7 +467,7 @@ test('indent properly; regression test for issue #16', function (assert) {
       preferences: []
     },
     items: [{
-      creators: [ { lastName: 'Lander' }, { toJSON () { return null } } ],
+      creators: [{ lastName: 'Lander' }, { toJSON () { return null } }],
       date: { toJSON () { return '01/01/1989' } }
     }]
   }

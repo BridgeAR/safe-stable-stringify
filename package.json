@@ -21,7 +21,6 @@
     "test": "standard && tap test.js",
     "benchmark": "node benchmark.js",
     "compare": "node compare.js",
-    "coverage": "nyc --reporter=html --reporter=text npm test",
     "lint": "standard --fix"
   },
   "author": "Ruben Bridgewater",
@@ -31,16 +30,15 @@
     "@types/json-stable-stringify": "^1.0.32",
     "benchmark": "^2.1.4",
     "clone": "^2.1.2",
-    "fast-json-stable-stringify": "^2.0.0",
-    "fast-safe-stringify": "^2.0.6",
+    "fast-json-stable-stringify": "^2.1.0",
+    "fast-safe-stringify": "^2.0.7",
     "fast-stable-stringify": "^1.0.0",
     "faster-stable-stringify": "^1.0.0",
     "json-stable-stringify": "^1.0.1",
     "json-stringify-deterministic": "^1.0.1",
     "json-stringify-safe": "^5.0.1",
-    "nyc": "^15.0.0",
-    "standard": "^12.0.1",
-    "tap": "^12.0.1"
+    "standard": "^14.3.3",
+    "tap": "^14.10.7"
   },
   "repository": {
     "type": "git",
