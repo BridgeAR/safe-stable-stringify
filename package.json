@@ -22,7 +22,7 @@
     "benchmark": "node benchmark.js",
     "compare": "node compare.js",
     "coverage": "nyc --reporter=html --reporter=text npm test",
-    "lint": "standard . --fix"
+    "lint": "standard --fix"
   },
   "author": "Ruben Bridgewater",
   "license": "MIT",
