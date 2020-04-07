@@ -2,7 +2,7 @@
 
 module.exports = stringify
 
-var gap = ''
+var indentation = ''
 // eslint-disable-next-line
 const strEscapeSequencesRegExp = /[\x00-\x1f\x22\x5c]/
 // eslint-disable-next-line
@@ -65,7 +65,7 @@ function strEscape (str) {
 // Full version: supports all options
 function stringifyFullFn (key, parent, stack, replacer, indent) {
   var i, res, join
-  const startGap = gap
+  const originalIndentation = indentation
   var value = parent[key]
 
   if (typeof value === 'object' && value !== null && typeof value.toJSON === 'function') {
@@ -83,20 +83,15 @@ function stringifyFullFn (key, parent, stack, replacer, indent) {
           return '"[Circular]"'
         }
       }
-      gap += indent
-
       if (Array.isArray(value)) {
         if (value.length === 0) {
           return '[]'
         }
         stack.push(value)
         res = '['
-        if (gap === '') {
-          join = ','
-        } else {
-          res += `\n${gap}`
-          join = `,\n${gap}`
-        }
+        indentation += indent
+        res += `\n${indentation}`
+        join = `,\n${indentation}`
         // Use null as placeholder for non-JSON values.
         for (i = 0; i < value.length - 1; i++) {
           const tmp = stringifyFullFn(i, value, stack, replacer, indent)
@@ -105,12 +100,12 @@ function stringifyFullFn (key, parent, stack, replacer, indent) {
         }
         const tmp = stringifyFullFn(i, value, stack, replacer, indent)
         res += tmp !== undefined ? tmp : 'null'
-        if (gap !== '') {
-          res += `\n${startGap}`
+        if (indentation !== '') {
+          res += `\n${originalIndentation}`
         }
         res += ']'
         stack.pop()
-        gap = startGap
+        indentation = originalIndentation
         return res
       }
 
@@ -120,31 +115,26 @@ function stringifyFullFn (key, parent, stack, replacer, indent) {
       }
       stack.push(value)
       res = '{'
-      if (gap === '') {
-        join = ','
-      } else {
-        res += `\n${gap}`
-        join = `,\n${gap}`
-      }
+      indentation += indent
+      res += `\n${indentation}`
+      join = `,\n${indentation}`
       var separator = ''
       for (i = 0; i < keys.length; i++) {
         key = keys[i]
         const tmp = stringifyFullFn(key, value, stack, replacer, indent)
         if (tmp !== undefined) {
-          res += `${separator}"${strEscape(key)}"${gap !== '' ? ': ' : ':'}${tmp}`
+          res += `${separator}"${strEscape(key)}": ${tmp}`
           separator = join
         }
       }
-      if (gap !== '') {
-        if (separator !== '') {
-          res += `\n${startGap}`
-        } else {
-          res = '{'
-        }
+      if (separator !== '') {
+        res += `\n${originalIndentation}`
+      } else {
+        res = '{'
       }
       res += '}'
       stack.pop()
-      gap = startGap
+      indentation = originalIndentation
       return res
     case 'string':
       return `"${strEscape(value)}"`
@@ -158,7 +148,7 @@ function stringifyFullFn (key, parent, stack, replacer, indent) {
 
 function stringifyFullArr (key, value, stack, replacer, indent) {
   var i, res, join
-  const startGap = gap
+  const originalIndentation = indentation
 
   if (typeof value === 'object' && value !== null && typeof value.toJSON === 'function') {
     value = value.toJSON(key)
@@ -174,20 +164,15 @@ function stringifyFullArr (key, value, stack, replacer, indent) {
           return '"[Circular]"'
         }
       }
-      gap += indent
-
       if (Array.isArray(value)) {
         if (value.length === 0) {
           return '[]'
         }
         stack.push(value)
         res = '['
-        if (gap === '') {
-          join = ','
-        } else {
-          res += `\n${gap}`
-          join = `,\n${gap}`
-        }
+        indentation += indent
+        res += `\n${indentation}`
+        join = `,\n${indentation}`
         // Use null as placeholder for non-JSON values.
         for (i = 0; i < value.length - 1; i++) {
           const tmp = stringifyFullArr(i, value[i], stack, replacer, indent)
@@ -196,12 +181,12 @@ function stringifyFullArr (key, value, stack, replacer, indent) {
         }
         const tmp = stringifyFullArr(i, value[i], stack, replacer, indent)
         res += tmp !== undefined ? tmp : 'null'
-        if (gap !== '') {
-          res += `\n${startGap}`
+        if (indentation !== '') {
+          res += `\n${originalIndentation}`
         }
         res += ']'
         stack.pop()
-        gap = startGap
+        indentation = originalIndentation
         return res
       }
 
@@ -210,33 +195,28 @@ function stringifyFullArr (key, value, stack, replacer, indent) {
       }
       stack.push(value)
       res = '{'
-      if (gap === '') {
-        join = ','
-      } else {
-        res += `\n${gap}`
-        join = `,\n${gap}`
-      }
+      indentation += indent
+      res += `\n${indentation}`
+      join = `,\n${indentation}`
       var separator = ''
       for (i = 0; i < replacer.length; i++) {
         if (typeof replacer[i] === 'string' || typeof replacer[i] === 'number') {
           key = replacer[i]
           const tmp = stringifyFullArr(key, value[key], stack, replacer, indent)
           if (tmp !== undefined) {
-            res += `${separator}"${strEscape(key)}"${gap ? ': ' : ':'}${tmp}`
+            res += `${separator}"${strEscape(key)}": ${tmp}`
             separator = join
           }
         }
       }
-      if (gap !== '') {
-        if (separator !== '') {
-          res += `\n${startGap}`
-        } else {
-          res = '{'
-        }
+      if (separator !== '') {
+        res += `\n${originalIndentation}`
+      } else {
+        res = '{'
       }
       res += '}'
       stack.pop()
-      gap = startGap
+      indentation = originalIndentation
       return res
     case 'string':
       return `"${strEscape(value)}"`
@@ -251,7 +231,7 @@ function stringifyFullArr (key, value, stack, replacer, indent) {
 // Supports only the spacer option
 function stringifyIndent (key, value, stack, indent) {
   var i, res, join
-  const startGap = gap
+  const originalIndentation = indentation
 
   switch (typeof value) {
     case 'object':
@@ -273,7 +253,6 @@ function stringifyIndent (key, value, stack, indent) {
           return '"[Circular]"'
         }
       }
-      gap += indent
 
       if (Array.isArray(value)) {
         if (value.length === 0) {
@@ -281,12 +260,9 @@ function stringifyIndent (key, value, stack, indent) {
         }
         stack.push(value)
         res = '['
-        if (gap === '') {
-          join = ','
-        } else {
-          res += `\n${gap}`
-          join = `,\n${gap}`
-        }
+        indentation += indent
+        res += `\n${indentation}`
+        join = `,\n${indentation}`
         // Use null as placeholder for non-JSON values.
         for (i = 0; i < value.length - 1; i++) {
           const tmp = stringifyIndent(i, value[i], stack, indent)
@@ -295,12 +271,12 @@ function stringifyIndent (key, value, stack, indent) {
         }
         const tmp = stringifyIndent(i, value[i], stack, indent)
         res += tmp !== undefined ? tmp : 'null'
-        if (gap !== '') {
-          res += `\n${startGap}`
+        if (indentation !== '') {
+          res += `\n${originalIndentation}`
         }
         res += ']'
         stack.pop()
-        gap = startGap
+        indentation = originalIndentation
         return res
       }
 
@@ -310,31 +286,26 @@ function stringifyIndent (key, value, stack, indent) {
       }
       stack.push(value)
       res = '{'
-      if (gap === '') {
-        join = ','
-      } else {
-        res += `\n${gap}`
-        join = `,\n${gap}`
-      }
+      indentation += indent
+      res += `\n${indentation}`
+      join = `,\n${indentation}`
       var separator = ''
       for (i = 0; i < keys.length; i++) {
         key = keys[i]
         const tmp = stringifyIndent(key, value[key], stack, indent)
         if (tmp !== undefined) {
-          res += `${separator}"${strEscape(key)}"${gap ? ': ' : ':'}${tmp}`
+          res += `${separator}"${strEscape(key)}": ${tmp}`
           separator = join
         }
       }
-      if (gap !== '') {
-        if (separator !== '') {
-          res += `\n${startGap}`
-        } else {
-          res = '{'
-        }
+      if (separator !== '') {
+        res += `\n${originalIndentation}`
+      } else {
+        res = '{'
       }
       res += '}'
       stack.pop()
-      gap = startGap
+      indentation = originalIndentation
       return res
     case 'string':
       return `"${strEscape(value)}"`
@@ -567,7 +538,7 @@ function insertSort (arr) {
 function stringify (value, replacer, spacer) {
   var i
   var indent = ''
-  gap = ''
+  indentation = ''
 
   if (arguments.length > 1) {
     // If the spacer parameter is a number, make an indent string containing that
