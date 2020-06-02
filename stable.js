@@ -141,6 +141,8 @@ function stringifyFullFn (key, parent, stack, replacer, indent) {
     case 'number':
       // JSON numbers must be finite. Encode non-finite numbers as null.
       return isFinite(value) ? String(value) : 'null'
+    case 'bigint':
+      return String(value)
     case 'boolean':
       return value === true ? 'true' : 'false'
   }
@@ -223,6 +225,8 @@ function stringifyFullArr (key, value, stack, replacer, indent) {
     case 'number':
       // JSON numbers must be finite. Encode non-finite numbers as null.
       return isFinite(value) ? String(value) : 'null'
+    case 'bigint':
+      return String(value)
     case 'boolean':
       return value === true ? 'true' : 'false'
   }
@@ -312,6 +316,8 @@ function stringifyIndent (key, value, stack, indent) {
     case 'number':
       // JSON numbers must be finite. Encode non-finite numbers as null.
       return isFinite(value) ? String(value) : 'null'
+    case 'bigint':
+      return String(value)
     case 'boolean':
       return value === true ? 'true' : 'false'
   }
@@ -378,6 +384,8 @@ function stringifyReplacerArr (key, value, stack, replacer) {
     case 'number':
       // JSON numbers must be finite. Encode non-finite numbers as null.
       return isFinite(value) ? String(value) : 'null'
+    case 'bigint':
+      return String(value)
     case 'boolean':
       return value === true ? 'true' : 'false'
   }
@@ -444,6 +452,8 @@ function stringifyReplacerFn (key, parent, stack, replacer) {
     case 'number':
       // JSON numbers must be finite. Encode non-finite numbers as null.
       return isFinite(value) ? String(value) : 'null'
+    case 'bigint':
+      return String(value)
     case 'boolean':
       return value === true ? 'true' : 'false'
   }
@@ -516,6 +526,8 @@ function stringifySimple (key, value, stack) {
       // JSON numbers must be finite. Encode non-finite numbers as null.
       // Convert the numbers implicit to a string instead of explicit.
       return isFinite(value) ? String(value) : 'null'
+    case 'bigint':
+      return String(value)
     case 'boolean':
       return value === true ? 'true' : 'false'
   }
