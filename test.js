@@ -206,6 +206,13 @@ test('null property', function (assert) {
   assert.end()
 })
 
+test('bigint property', function (assert) {
+  const obj = { f: 2n ** 64n }
+  const actual = stringify(obj)
+  assert.is(actual, '{"f":18446744073709551616}')
+  assert.end()
+})
+
 test('nested child circular reference in toJSON', function (assert) {
   var circle = { some: 'data' }
   circle.circle = circle
