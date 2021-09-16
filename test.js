@@ -677,3 +677,23 @@ test('indent properly; regression test for issue #16', function (assert) {
 
   assert.end()
 })
+
+test('should stop if max depth is reached', (assert) => {
+  
+  const nested = {};
+  const MAX_DEPTH = 10;
+  let currentNestedObject = null;
+  for (let i = 0; i < MAX_DEPTH; i++) {
+    const k = 'nest_' + i;
+    if (!currentNestedObject) {
+      currentNestedObject = nested;
+    }
+    currentNestedObject[k] = {
+      'foo': 'bar',
+    };
+    currentNestedObject = currentNestedObject[k];
+  }
+  const res = stringify(nested);
+  assert.ok(res.indexOf('"nest_4":"[...]"') !== -1)
+  assert.end()
+})
