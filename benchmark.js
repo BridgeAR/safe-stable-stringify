@@ -4,7 +4,8 @@ const Benchmark = require('benchmark')
 const suite = new Benchmark.Suite()
 const stringify = require('.')
 
-const array = new Array(10).fill(0).map((_, i) => i)
+// eslint-disable-next-line
+const array = Array({ length: 10 }, (_, i) => i)
 const obj = { array }
 const circ = JSON.parse(JSON.stringify(obj))
 circ.o = { obj: circ, array }
