@@ -1,6 +1,15 @@
 'use strict'
 
-module.exports = stringify
+// let MAX_DEPTH = null
+// let MAX_BREADTH = null
+let options = {
+  maxDepth: null,
+  maxBreadth: null
+}
+module.exports = function (opts = {}) {
+  options = Object.assign({}, options, opts)
+  return stringify
+}
 
 var indentation = ''
 // eslint-disable-next-line
@@ -448,16 +457,13 @@ function stringifyReplacerFn (key, parent, stack, replacer) {
       return value === true ? 'true' : 'false'
   }
 }
-let currentDepth = 0;
-const MAX_DEPTH = 5
-const MAX_BREADTH = 5
+
 // Simple without any options
-function stringifySimple (key, value, stack) {
+function stringifySimple (key, value, stack, depth) {
+  depth++
   var i, res
-  console.log(currentDepth, key);
   switch (typeof value) {
     case 'object':
-      currentDepth++
       if (value === null) {
         return 'null'
       }
@@ -465,7 +471,7 @@ function stringifySimple (key, value, stack) {
         value = value.toJSON(key)
         // Prevent calling `toJSON` again
         if (typeof value !== 'object') {
-          return stringifySimple(key, value, stack)
+          return stringifySimple(key, value, stack, depth)
         }
         if (value === null) {
           return 'null'
@@ -492,25 +498,28 @@ function stringifySimple (key, value, stack) {
         const tmp = stringifySimple(i, value[i], stack)
         res += tmp !== undefined ? tmp : 'null'
         res += ']'
-        currentDepth--
         stack.pop()
         return res
       }
-
-      var keys = insertSort(Object.keys(value))
+      var keys = []
+      if (options.maxBreadth) {
+        keys = Object.keys(value)
+        keys = keys.slice(0, options.maxBreadth)
+      } else {
+        keys = insertSort(Object.keys(value))
+      }
       if (keys.length === 0) {
         return '{}'
       }
-      keys = keys.slice(0, MAX_BREADTH)
       stack.push(value)
-      if (currentDepth - 1 > MAX_DEPTH) {
+      if (options.maxDepth && depth > options.maxDepth) {
         return '"[...]"'
       }
       var separator = ''
       res = '{'
       for (i = 0; i < keys.length; i++) {
         key = keys[i]
-        const tmp = stringifySimple(key, value[key], stack)
+        const tmp = stringifySimple(key, value[key], stack, depth)
         if (tmp !== undefined) {
           res += `${separator}"${strEscape(key)}":${tmp}`
           separator = ','
@@ -518,7 +527,6 @@ function stringifySimple (key, value, stack) {
       }
       res += '}'
       stack.pop()
-      currentDepth--
       return res
     case 'string':
       return `"${strEscape(value)}"`
@@ -579,5 +587,5 @@ function stringify (value, replacer, spacer) {
       return stringifyReplacerArr('', value, [], replacer)
     }
   }
-  return stringifySimple('', value, [])
+  return stringifySimple('', value, [], 0)
 }

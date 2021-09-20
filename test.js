@@ -1,5 +1,5 @@
 const { test } = require('tap')
-const stringify = require('./')
+const stringify = require('./')()
 const clone = require('clone')
 
 test('circular reference to root', function (assert) {
@@ -679,21 +679,40 @@ test('indent properly; regression test for issue #16', function (assert) {
 })
 
 test('should stop if max depth is reached', (assert) => {
-  
-  const nested = {};
-  const MAX_DEPTH = 10;
-  let currentNestedObject = null;
+  const serialize = require('./')({
+    maxDepth: 5
+  })
+  const nested = {}
+  const MAX_DEPTH = 10
+  let currentNestedObject = null
   for (let i = 0; i < MAX_DEPTH; i++) {
-    const k = 'nest_' + i;
+    const k = 'nest_' + i
     if (!currentNestedObject) {
-      currentNestedObject = nested;
+      currentNestedObject = nested
     }
     currentNestedObject[k] = {
-      'foo': 'bar',
-    };
-    currentNestedObject = currentNestedObject[k];
+      foo: 'bar'
+    }
+    currentNestedObject = currentNestedObject[k]
   }
-  const res = stringify(nested);
+  const res = serialize(nested)
+  console.log(res)
   assert.ok(res.indexOf('"nest_4":"[...]"') !== -1)
+  assert.end()
+})
+
+test('should serialize only first 10 elements', (assert) => {
+  const serialize = require('./')({
+    maxBreadth: 10
+  })
+  const breadth = {}
+  const MAX_BREADTH = 100
+  for (let i = 0; i < MAX_BREADTH; i++) {
+    const k = 'key_' + i
+    breadth[k] = 'foobar'
+  }
+  const res = serialize(breadth)
+  const expected = '{"key_0":"foobar","key_1":"foobar","key_2":"foobar","key_3":"foobar","key_4":"foobar","key_5":"foobar","key_6":"foobar","key_7":"foobar","key_8":"foobar","key_9":"foobar"}'
+  assert.equal(res, expected)
   assert.end()
 })
