@@ -1,5 +1,5 @@
 const { test } = require('tap')
-const stringify = require('./')()
+const stringify = require('./')
 const clone = require('clone')
 
 test('circular reference to root', function (assert) {
@@ -679,7 +679,7 @@ test('indent properly; regression test for issue #16', function (assert) {
 })
 
 test('should stop if max depth is reached', (assert) => {
-  const serialize = require('./')({
+  const serialize = stringify.configure({
     maxDepth: 5
   })
   const nested = {}
@@ -696,13 +696,12 @@ test('should stop if max depth is reached', (assert) => {
     currentNestedObject = currentNestedObject[k]
   }
   const res = serialize(nested)
-  console.log(res)
   assert.ok(res.indexOf('"nest_4":"[...]"') !== -1)
   assert.end()
 })
 
 test('should serialize only first 10 elements', (assert) => {
-  const serialize = require('./')({
+  const serialize = stringify.configure({
     maxBreadth: 10
   })
   const breadth = {}
