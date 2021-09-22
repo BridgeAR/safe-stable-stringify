@@ -144,8 +144,8 @@ function getDeterministicOption (options) {
 
 function main (opts) {
   const defaults = {
-    maxDepth: null,
-    maxBreadth: null
+    maximumDepth: null,
+    maximumBreadth: null
   }
   const options = Object.assign({}, defaults, opts)
 
@@ -452,14 +452,14 @@ function main (opts) {
         }
 
         let keys = Object.keys(value)
-        if (options.maxBreadth) {
-          keys = keys.slice(0, options.maxBreadth)
+        if (options.maximumBreadth) {
+          keys = keys.slice(0, options.maximumBreadth)
         }
 
         if (keys.length === 0) {
           return '{}'
         }
-        if (options.maxDepth && depth > options.maxDepth) {
+        if (options.maximumDepth && stack.length > options.maximumDepth) {
           return '"[...]"'
         }
         let separator = ''
