@@ -680,7 +680,7 @@ test('indent properly; regression test for issue #16', function (assert) {
 
 test('should stop if max depth is reached', (assert) => {
   const serialize = stringify.configure({
-    maxDepth: 5
+    maximumDepth: 5
   })
   const nested = {}
   const MAX_DEPTH = 10
@@ -702,7 +702,7 @@ test('should stop if max depth is reached', (assert) => {
 
 test('should serialize only first 10 elements', (assert) => {
   const serialize = stringify.configure({
-    maxBreadth: 10
+    maximumBreadth: 10
   })
   const breadth = {}
   const MAX_BREADTH = 100

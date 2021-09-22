@@ -142,17 +142,22 @@ function getDeterministicOption (options) {
   return deterministic === undefined ? true : deterministic
 }
 
-function main (opts) {
-  const defaults = {
-    maximumDepth: null,
-    maximumBreadth: null
+function getNumericOption (options, key) {
+  if (options && Object.prototype.hasOwnProperty.call(options, key)) {
+    var value = options[key]
+    if (typeof value !== 'number') {
+      throw new TypeError(`The "${key}" argument must be of type Number`)
+    }
   }
-  const options = Object.assign({}, defaults, opts)
+  return value === undefined ? Infinity : value
+}
 
+function main (options) {
   const circularValue = getCircularValueOption(options)
   const bigint = getBigIntOption(options)
   const deterministic = getDeterministicOption(options)
-
+  const maximumDepth = getNumericOption(options, 'maximumDepth')
+  const maximumBreadth = getNumericOption(options, 'maximumBreadth')
   // Full version: supports all options
   function stringifyFullFn (key, parent, stack, replacer, spacer, indentation) {
     let value = parent[key]
@@ -452,14 +457,14 @@ function main (opts) {
         }
 
         let keys = Object.keys(value)
-        if (options.maximumBreadth) {
-          keys = keys.slice(0, options.maximumBreadth)
+        if (maximumBreadth) {
+          keys = keys.slice(0, maximumBreadth)
         }
 
         if (keys.length === 0) {
           return '{}'
         }
-        if (options.maximumDepth && depth > options.maximumDepth) {
+        if (depth > maximumDepth) {
           return '"[Object]"'
         }
         let separator = ''
