@@ -458,7 +458,12 @@ function main (options) {
 
         let keys = Object.keys(value)
         if (maximumBreadth) {
-          keys = keys.slice(0, maximumBreadth)
+          const removedKeys = keys.length - maximumBreadth
+          if (removedKeys > 0) {
+            keys = keys.slice(0, maximumBreadth)
+            keys.push('[DEBUG]')
+            value['[DEBUG]'] = `${removedKeys} keys not stringified`
+          }
         }
 
         if (keys.length === 0) {

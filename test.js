@@ -711,7 +711,7 @@ test('should serialize only first 10 elements', (assert) => {
     breadth[k] = 'foobar'
   }
   const res = serialize(breadth)
-  const expected = '{"key_0":"foobar","key_1":"foobar","key_2":"foobar","key_3":"foobar","key_4":"foobar","key_5":"foobar","key_6":"foobar","key_7":"foobar","key_8":"foobar","key_9":"foobar"}'
+  const expected = '{"[DEBUG]":"90 keys not stringified","key_0":"foobar","key_1":"foobar","key_2":"foobar","key_3":"foobar","key_4":"foobar","key_5":"foobar","key_6":"foobar","key_7":"foobar","key_8":"foobar","key_9":"foobar"}'
   assert.equal(res, expected)
   assert.end()
 })
