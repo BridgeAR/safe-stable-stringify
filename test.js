@@ -696,7 +696,7 @@ test('should stop if max depth is reached', (assert) => {
     currentNestedObject = currentNestedObject[k]
   }
   const res = serialize(nested)
-  assert.ok(res.indexOf('"nest_4":"[...]"') !== -1)
+  assert.ok(res.indexOf('"nest_4":"[Object]"') !== -1)
   assert.end()
 })
 

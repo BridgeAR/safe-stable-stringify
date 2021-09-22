@@ -459,8 +459,8 @@ function main (opts) {
         if (keys.length === 0) {
           return '{}'
         }
-        if (options.maximumDepth && stack.length > options.maximumDepth) {
-          return '"[...]"'
+        if (options.maximumDepth && depth > options.maximumDepth) {
+          return '"[Object]"'
         }
         let separator = ''
         if (isTypedArray(value)) {
