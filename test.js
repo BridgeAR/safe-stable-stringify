@@ -715,3 +715,58 @@ test('should serialize only first 10 elements', (assert) => {
   assert.equal(res, expected)
   assert.end()
 })
+
+test('should serialize only first 10 elements with custom replacer and indentation', (assert) => {
+  const serialize = stringify.configure({
+    maximumBreadth: 10
+  })
+  const breadth = {}
+  const MAX_BREADTH = 100
+  for (let i = 0; i < MAX_BREADTH; i++) {
+    const k = 'key_' + i
+    breadth[k] = 'foobar'
+  }
+  const res = serialize(breadth, (k, v) => v, 2)
+  const expected = `{
+  "[DEBUG]": "90 keys not stringified",
+  "key_0": "foobar",
+  "key_1": "foobar",
+  "key_2": "foobar",
+  "key_3": "foobar",
+  "key_4": "foobar",
+  "key_5": "foobar",
+  "key_6": "foobar",
+  "key_7": "foobar",
+  "key_8": "foobar",
+  "key_9": "foobar"
+}`
+  assert.equal(res, expected)
+  assert.end()
+})
+
+test('limit number of keys with array replacer', function (assert) {
+  const replacer = ['a', 'b', 'c', 'd', 'e']
+  const obj = {
+    a: 'a',
+    b: 'b',
+    c: 'c',
+    d: 'd',
+    e: 'e',
+    f: 'f',
+    g: 'g',
+    h: 'h'
+  }
+
+  const serialize = stringify.configure({
+    maximumBreadth: 3
+  })
+  const res = serialize(obj, replacer, 2)
+  const expected = `{
+  "[DEBUG]": "5 keys not stringified",
+  "a": "a",
+  "b": "b",
+  "c": "c"
+}`
+  assert.equal(res, expected)
+  assert.end()
+})

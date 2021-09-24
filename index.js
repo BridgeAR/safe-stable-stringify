@@ -208,8 +208,20 @@ function main (options) {
         }
 
         let keys = Object.keys(value)
+        if (maximumBreadth) {
+          const removedKeys = keys.length - maximumBreadth
+          if (removedKeys > 0) {
+            keys = keys.slice(0, maximumBreadth)
+            keys.push('[DEBUG]')
+            value['[DEBUG]'] = `${removedKeys} keys not stringified`
+          }
+        }
+
         if (keys.length === 0) {
           return '{}'
+        }
+        if (maximumDepth < stack.length + 1) {
+          return '"[Object]"'
         }
         let whitespace = ''
         let separator = ''
@@ -293,7 +305,21 @@ function main (options) {
           stack.pop()
           return `[${res}]`
         }
-
+        const _value = {}
+        const keys = Object.keys(value)
+        if (maximumBreadth) {
+          const removedKeys = keys.length - maximumBreadth
+          if (removedKeys > 0) {
+            _value['[DEBUG]'] = `${removedKeys} keys not stringified`
+            for (let c = 0; c < maximumBreadth; c++) {
+              const currentKey = keys[c]
+              const currentValue = value[currentKey]
+              _value[currentKey] = currentValue
+            }
+            replacer.unshift('[DEBUG]')
+            value = _value
+          }
+        }
         if (replacer.length === 0) {
           return '{}'
         }
@@ -375,8 +401,20 @@ function main (options) {
         }
 
         let keys = Object.keys(value)
+        if (maximumBreadth) {
+          const removedKeys = keys.length - maximumBreadth
+          if (removedKeys > 0) {
+            keys = keys.slice(0, maximumBreadth)
+            keys.push('[DEBUG]')
+            value['[DEBUG]'] = `${removedKeys} keys not stringified`
+          }
+        }
+
         if (keys.length === 0) {
           return '{}'
+        }
+        if (maximumDepth < stack.length + 1) {
+          return '"[Object]"'
         }
         indentation += spacer
         const join = `,\n${indentation}`
@@ -414,8 +452,7 @@ function main (options) {
   }
 
   // Simple without any options
-  function stringifySimple (key, value, stack, depth) {
-    depth++
+  function stringifySimple (key, value, stack) {
     switch (typeof value) {
       case 'string':
         return `"${strEscape(value)}"`
@@ -427,7 +464,7 @@ function main (options) {
           value = value.toJSON(key)
           // Prevent calling `toJSON` again
           if (typeof value !== 'object') {
-            return stringifySimple(key, value, stack, depth)
+            return stringifySimple(key, value, stack)
           }
           if (value === null) {
             return 'null'
@@ -446,11 +483,11 @@ function main (options) {
           stack.push(value)
           let i = 0
           for (; i < value.length - 1; i++) {
-            const tmp = stringifySimple(i, value[i], stack, depth)
+            const tmp = stringifySimple(i, value[i], stack)
             res += tmp !== undefined ? tmp : 'null'
             res += ','
           }
-          const tmp = stringifySimple(i, value[i], stack, depth)
+          const tmp = stringifySimple(i, value[i], stack)
           res += tmp !== undefined ? tmp : 'null'
           stack.pop()
           return `[${res}]`
@@ -469,7 +506,7 @@ function main (options) {
         if (keys.length === 0) {
           return '{}'
         }
-        if (depth > maximumDepth) {
+        if (maximumDepth < stack.length + 1) {
           return '"[Object]"'
         }
         let separator = ''
@@ -482,7 +519,7 @@ function main (options) {
         }
         stack.push(value)
         for (const key of keys) {
-          const tmp = stringifySimple(key, value[key], stack, depth)
+          const tmp = stringifySimple(key, value[key], stack)
           if (tmp !== undefined) {
             res += `${separator}"${strEscape(key)}":${tmp}`
             separator = ','
@@ -520,7 +557,7 @@ function main (options) {
         return stringifyIndent('', value, [], spacer, '')
       }
     }
-    return stringifySimple('', value, [], 0)
+    return stringifySimple('', value, [])
   }
 
   return stringify
