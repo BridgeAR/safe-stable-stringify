@@ -47,6 +47,8 @@ stringify(circular, ['a', 'b'], 2)
 * `circularValue` {string|null} Define the value for circular references. **Default:** `[Circular]`.
 * `deterministic` {boolean} If `true`, guarantee a deterministic key order
   instead of relying on the insertion order. **Default:** `true`.
+* `maximumDepth` {number} Max number of nested object that will be serialized. Will replace deeply nested object with `'[Object]'` value. **Default:** `Infinity`
+* `maximumBreadth` {number} Max number of properties (for object) or elements (for arrays/typed arrays) that will be serialized. It will add a `[DEBUG]` key in the resulting serialized string to inform the user that not all keys have been serialized. **Default:** `Infinity`
 * Returns: {function} A stringify function with the options applied.
 
 ```js
