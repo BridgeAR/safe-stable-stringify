@@ -785,3 +785,20 @@ test('limit number of keys in array', (assert) => {
   assert.equal(res, expected)
   assert.end()
 })
+
+test('limit number of keys in typed array', (assert) => {
+  const serialize = stringify.configure({
+    maximumBreadth: 3
+  })
+  const MAX = 100
+  const arr = new Int32Array(MAX)
+
+  for (let i = 0; i < MAX; i++) {
+    arr[i] = i
+  }
+  console.log(arr)
+  const res = serialize(arr)
+  const expected = '{"0":0,"1":1,"2":2}'
+  assert.equal(res, expected)
+  assert.end()
+})

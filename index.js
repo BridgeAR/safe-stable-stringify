@@ -98,9 +98,12 @@ function isTypedArray (value) {
   return typedArrayPrototypeGetSymbolToStringTag.call(value) !== undefined
 }
 
-function stringifyTypedArray (array, separator) {
+function stringifyTypedArray (array, separator, maximumBreadth) {
   if (array.length === 0) {
     return ''
+  }
+  if (array.length > maximumBreadth) {
+    array = array.slice(0, maximumBreadth)
   }
   const whitespace = separator === ',' ? '' : ' '
   let res = `"0":${whitespace}${array[0]}`
@@ -234,7 +237,7 @@ function main (options) {
           whitespace = ' '
         }
         if (isTypedArray(value)) {
-          res += stringifyTypedArray(value, join)
+          res += stringifyTypedArray(value, join, maximumBreadth)
           keys = keys.slice(value.length)
           separator = join
         }
@@ -430,7 +433,7 @@ function main (options) {
         let res = ''
         let separator = ''
         if (isTypedArray(value)) {
-          res += stringifyTypedArray(value, join)
+          res += stringifyTypedArray(value, join, maximumBreadth)
           keys = keys.slice(value.length)
           separator = join
         }
@@ -523,7 +526,7 @@ function main (options) {
         }
         let separator = ''
         if (isTypedArray(value)) {
-          res += stringifyTypedArray(value, ',')
+          res += stringifyTypedArray(value, ',', maximumBreadth)
           keys = keys.slice(value.length)
         }
         if (deterministic) {
