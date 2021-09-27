@@ -186,6 +186,9 @@ function main (options) {
           if (value.length === 0) {
             return '[]'
           }
+          if (value.length > maximumBreadth) {
+            value = value.slice(0, maximumBreadth)
+          }
           stack.push(value)
           if (spacer !== '') {
             indentation += spacer
@@ -285,6 +288,9 @@ function main (options) {
           if (value.length === 0) {
             return '[]'
           }
+          if (value.length > maximumBreadth) {
+            value = value.slice(0, maximumBreadth)
+          }
           stack.push(value)
           if (spacer !== '') {
             indentation += spacer
@@ -383,6 +389,9 @@ function main (options) {
           if (value.length === 0) {
             return '[]'
           }
+          if (value.length > maximumBreadth) {
+            value = value.slice(0, maximumBreadth)
+          }
           stack.push(value)
           indentation += spacer
           let res = `\n${indentation}`
@@ -479,6 +488,9 @@ function main (options) {
         if (Array.isArray(value)) {
           if (value.length === 0) {
             return '[]'
+          }
+          if (value.length > maximumBreadth) {
+            value = value.slice(0, maximumBreadth)
           }
           stack.push(value)
           let i = 0

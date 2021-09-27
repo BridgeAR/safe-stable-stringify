@@ -770,3 +770,18 @@ test('limit number of keys with array replacer', function (assert) {
   assert.equal(res, expected)
   assert.end()
 })
+
+test('limit number of keys in array', (assert) => {
+  const serialize = stringify.configure({
+    maximumBreadth: 3
+  })
+  const arr = []
+  const MAX_BREADTH = 100
+  for (let i = 0; i < MAX_BREADTH; i++) {
+    arr.push(i)
+  }
+  const res = serialize(arr)
+  const expected = '[0,1,2]'
+  assert.equal(res, expected)
+  assert.end()
+})
