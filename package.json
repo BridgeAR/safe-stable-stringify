@@ -25,11 +25,12 @@
     "test": "standard && tap test.js",
     "benchmark": "node benchmark.js",
     "compare": "node compare.js",
-    "lint": "standard --fix"
+    "lint": "standard --fix",
+    "tsc": "tsc"
   },
   "author": "Ruben Bridgewater",
   "license": "MIT",
-  "typings": "index",
+  "typings": "index.d.ts",
   "devDependencies": {
     "@types/json-stable-stringify": "^1.0.32",
     "benchmark": "^2.1.4",
@@ -42,7 +43,8 @@
     "json-stringify-deterministic": "^1.0.1",
     "json-stringify-safe": "^5.0.1",
     "standard": "^15.0.0",
-    "tap": "^15.0.9"
+    "tap": "^15.0.9",
+    "typescript": "^4.4.3"
   },
   "repository": {
     "type": "git",

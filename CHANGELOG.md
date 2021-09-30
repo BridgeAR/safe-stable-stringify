@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.0.1
+
+- Fixed maximum spacer length (10)
+- Fixed TypeScript definition
+
 ## v2.0.0
 
 - __[BREAKING]__ Convert BigInt to number by default instead of ignoring these values
