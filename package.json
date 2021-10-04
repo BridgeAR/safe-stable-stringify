@@ -23,9 +23,14 @@
   "main": "index.js",
   "scripts": {
     "test": "standard && tap test.js",
+    "tap": "tap test.js",
+    "tap:only": "tap test.js --watch --only",
     "benchmark": "node benchmark.js",
     "compare": "node compare.js",
     "lint": "standard --fix"
+  },
+  "engines": {
+    "node": ">=12"
   },
   "author": "Ruben Bridgewater",
   "license": "MIT",

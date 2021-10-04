@@ -102,12 +102,12 @@ function stringifyTypedArray (array, separator, maximumBreadth) {
   if (array.length === 0) {
     return ''
   }
-  if (array.length > maximumBreadth) {
-    array = array.slice(0, maximumBreadth)
+  if (array.length < maximumBreadth) {
+    maximumBreadth = array.length
   }
   const whitespace = separator === ',' ? '' : ' '
   let res = `"0":${whitespace}${array[0]}`
-  for (let i = 1; i < array.length; i++) {
+  for (let i = 1; i < maximumBreadth; i++) {
     res += `${separator}"${i}":${whitespace}${array[i]}`
   }
   return res
@@ -169,6 +169,7 @@ function main (options) {
       value = value.toJSON(key)
     }
     value = replacer.call(parent, key, value)
+
 
     switch (typeof value) {
       case 'string':

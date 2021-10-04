@@ -5,6 +5,8 @@ export interface StringifyOptions {
   bigint?: boolean,
   circularValue?: string | null,
   deterministic?: boolean,
+  maximumBreadth?: number,
+  maximumDepth?: number,
 }
 
 declare function configure(StringifyOptions): stringify;

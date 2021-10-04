@@ -1,8 +1,8 @@
-const { test } = require('tap')
+const t  = require('tap')
 const stringify = require('./')
 const clone = require('clone')
 
-test('circular reference to root', function (assert) {
+t.test('circular reference to root', function (assert) {
   const fixture = { name: 'Tywin Lannister' }
   fixture.circle = fixture
   const expected = JSON.stringify(
@@ -13,7 +13,7 @@ test('circular reference to root', function (assert) {
   assert.end()
 })
 
-test('nested circular reference to root', function (assert) {
+t.test('nested circular reference to root', function (assert) {
   const fixture = { name: 'Tywin\n\t"Lannister' }
   fixture.id = { circle: fixture }
   const expected = JSON.stringify(
@@ -24,7 +24,7 @@ test('nested circular reference to root', function (assert) {
   assert.end()
 })
 
-test('child circular reference', function (assert) {
+t.test('child circular reference', function (assert) {
   const fixture = { name: 'Tywin Lannister', child: { name: 'Tyrion\n\t"Lannister'.repeat(20) } }
   fixture.child.dinklage = fixture.child
   const expected = JSON.stringify({
@@ -38,7 +38,7 @@ test('child circular reference', function (assert) {
   assert.end()
 })
 
-test('nested child circular reference', function (assert) {
+t.test('nested child circular reference', function (assert) {
   const fixture = { name: 'Tywin Lannister', child: { name: 'Tyrion Lannister' } }
   fixture.child.actor = { dinklage: fixture.child }
   const expected = JSON.stringify({
@@ -52,7 +52,7 @@ test('nested child circular reference', function (assert) {
   assert.end()
 })
 
-test('circular objects in an array', function (assert) {
+t.test('circular objects in an array', function (assert) {
   const fixture = { name: 'Tywin Lannister' }
   fixture.hand = [fixture, fixture]
   const expected = JSON.stringify({
@@ -63,7 +63,7 @@ test('circular objects in an array', function (assert) {
   assert.end()
 })
 
-test('nested circular references in an array', function (assert) {
+t.test('nested circular references in an array', function (assert) {
   const fixture = {
     name: 'Tywin Lannister',
     offspring: [{ name: 'Tyrion Lannister' }, { name: 'Cersei Lannister' }]
@@ -83,7 +83,7 @@ test('nested circular references in an array', function (assert) {
   assert.end()
 })
 
-test('circular arrays', function (assert) {
+t.test('circular arrays', function (assert) {
   const fixture = []
   fixture.push(fixture, fixture)
   const expected = JSON.stringify(['[Circular]', '[Circular]'])
@@ -92,7 +92,7 @@ test('circular arrays', function (assert) {
   assert.end()
 })
 
-test('nested circular arrays', function (assert) {
+t.test('nested circular arrays', function (assert) {
   const fixture = []
   fixture.push(
     { name: 'Jon Snow', bastards: fixture },
@@ -107,7 +107,7 @@ test('nested circular arrays', function (assert) {
   assert.end()
 })
 
-test('repeated non-circular references in objects', function (assert) {
+t.test('repeated non-circular references in objects', function (assert) {
   const daenerys = { name: 'Daenerys Targaryen' }
   const fixture = {
     motherOfDragons: daenerys,
@@ -119,7 +119,7 @@ test('repeated non-circular references in objects', function (assert) {
   assert.end()
 })
 
-test('repeated non-circular references in arrays', function (assert) {
+t.test('repeated non-circular references in arrays', function (assert) {
   const daenerys = { name: 'Daenerys Targaryen' }
   const fixture = [daenerys, daenerys]
   const expected = JSON.stringify(fixture)
@@ -128,7 +128,7 @@ test('repeated non-circular references in arrays', function (assert) {
   assert.end()
 })
 
-test('double child circular reference', function (assert) {
+t.test('double child circular reference', function (assert) {
   // create circular reference
   const child = { name: 'Tyrion Lannister' }
   child.dinklage = child
@@ -153,7 +153,7 @@ test('double child circular reference', function (assert) {
   assert.end()
 })
 
-test('child circular reference with toJSON', function (assert) {
+t.test('child circular reference with toJSON', function (assert) {
   // Create a test object that has an overriden `toJSON` property
   TestObject.prototype.toJSON = function () { return { special: 'case' } }
   function TestObject (content) {}
@@ -183,14 +183,14 @@ test('child circular reference with toJSON', function (assert) {
   assert.end()
 })
 
-test('null object', function (assert) {
+t.test('null object', function (assert) {
   const expected = JSON.stringify(null)
   const actual = stringify(null)
   assert.equal(actual, expected)
   assert.end()
 })
 
-test('null property', function (assert) {
+t.test('null property', function (assert) {
   const obj = { f: null }
   const expected = JSON.stringify(obj)
   const actual = stringify(obj)
@@ -198,7 +198,7 @@ test('null property', function (assert) {
   assert.end()
 })
 
-test('null property', function (assert) {
+t.test('null property', function (assert) {
   const obj = { toJSON () { return null } }
   const expected = JSON.stringify(obj)
   const actual = stringify(obj)
@@ -206,7 +206,7 @@ test('null property', function (assert) {
   assert.end()
 })
 
-test('nested child circular reference in toJSON', function (assert) {
+t.test('nested child circular reference in toJSON', function (assert) {
   var circle = { some: 'data' }
   circle.circle = circle
   var a = {
@@ -247,7 +247,7 @@ test('nested child circular reference in toJSON', function (assert) {
   assert.end()
 })
 
-test('invalid replacer being ignored', function (assert) {
+t.test('invalid replacer being ignored', function (assert) {
   const obj = { a: true }
 
   const actual = stringify(obj, 'invalidReplacer')
@@ -257,7 +257,7 @@ test('invalid replacer being ignored', function (assert) {
   assert.end()
 })
 
-test('replacer removing elements', function (assert) {
+t.test('replacer removing elements', function (assert) {
   const replacer = function (k, v) {
     if (k === 'remove') return
     return v
@@ -274,7 +274,7 @@ test('replacer removing elements', function (assert) {
   assert.end()
 })
 
-test('replacer removing elements and indentation', function (assert) {
+t.test('replacer removing elements and indentation', function (assert) {
   const replacer = function (k, v) {
     if (k === 'remove') return
     return v
@@ -286,7 +286,7 @@ test('replacer removing elements and indentation', function (assert) {
   assert.end()
 })
 
-test('replacer removing all elements', function (assert) {
+t.test('replacer removing all elements', function (assert) {
   const replacer = function (k, v) {
     if (k !== '') return
     return k
@@ -303,7 +303,7 @@ test('replacer removing all elements', function (assert) {
   assert.end()
 })
 
-test('replacer removing all elements and indentation', function (assert) {
+t.test('replacer removing all elements and indentation', function (assert) {
   const replacer = function (k, v) {
     if (k !== '') return
     return k
@@ -315,7 +315,7 @@ test('replacer removing all elements and indentation', function (assert) {
   assert.end()
 })
 
-test('array replacer', function (assert) {
+t.test('array replacer', function (assert) {
   const replacer = ['f', 1, null]
   const obj = { f: null, null: true, 1: false }
   // The null element will be removed!
@@ -331,7 +331,7 @@ test('array replacer', function (assert) {
   assert.end()
 })
 
-test('empty array replacer', function (assert) {
+t.test('empty array replacer', function (assert) {
   const replacer = []
   const obj = { f: null, null: true, 1: false }
   // The null element will be removed!
@@ -342,7 +342,7 @@ test('empty array replacer', function (assert) {
   assert.end()
 })
 
-test('array replacer and indentation', function (assert) {
+t.test('array replacer and indentation', function (assert) {
   const replacer = ['f', 1, null]
   const obj = { f: null, null: true, 1: [false, -Infinity, 't'] }
   // The null element will be removed!
@@ -352,7 +352,7 @@ test('array replacer and indentation', function (assert) {
   assert.end()
 })
 
-test('indent zero', function (assert) {
+t.test('indent zero', function (assert) {
   const obj = { f: null, null: true, 1: false }
   const expected = JSON.stringify(obj, null, 0)
   const actual = stringify(obj, null, 0)
@@ -360,7 +360,7 @@ test('indent zero', function (assert) {
   assert.end()
 })
 
-test('replacer and indentation without match', function (assert) {
+t.test('replacer and indentation without match', function (assert) {
   const replacer = function (k, v) {
     if (k === '') return v
   }
@@ -371,7 +371,7 @@ test('replacer and indentation without match', function (assert) {
   assert.end()
 })
 
-test('array replacer and indentation without match', function (assert) {
+t.test('array replacer and indentation without match', function (assert) {
   const replacer = ['']
   const obj = { f: 1, b: null, c: 't', d: Infinity, e: true }
   const expected = JSON.stringify(obj, replacer, '   ')
@@ -380,7 +380,7 @@ test('array replacer and indentation without match', function (assert) {
   assert.end()
 })
 
-test('indentation without match', function (assert) {
+t.test('indentation without match', function (assert) {
   const obj = { f: undefined }
   const expected = JSON.stringify(obj, undefined, 3)
   const actual = stringify(obj, undefined, 3)
@@ -388,7 +388,7 @@ test('indentation without match', function (assert) {
   assert.end()
 })
 
-test('array nulls and indentation', function (assert) {
+t.test('array nulls and indentation', function (assert) {
   const obj = [null, null]
   const expected = JSON.stringify(obj, undefined, 3)
   const actual = stringify(obj, undefined, 3)
@@ -396,7 +396,7 @@ test('array nulls and indentation', function (assert) {
   assert.end()
 })
 
-test('array nulls, replacer and indentation', function (assert) {
+t.test('array nulls, replacer and indentation', function (assert) {
   const obj = [null, Infinity, 5, true, false]
   const expected = JSON.stringify(obj, (_, v) => v, 3)
   const actual = stringify(obj, (_, v) => v, 3)
@@ -404,7 +404,7 @@ test('array nulls, replacer and indentation', function (assert) {
   assert.end()
 })
 
-test('array nulls and replacer', function (assert) {
+t.test('array nulls and replacer', function (assert) {
   const obj = [null, Infinity, 5, true, false, [], {}]
   const expected = JSON.stringify(obj, (_, v) => v)
   const actual = stringify(obj, (_, v) => v)
@@ -412,7 +412,7 @@ test('array nulls and replacer', function (assert) {
   assert.end()
 })
 
-test('array nulls, array replacer and indentation', function (assert) {
+t.test('array nulls, array replacer and indentation', function (assert) {
   const obj = [null, null, [], {}]
   const expected = JSON.stringify(obj, [false], 3)
   const actual = stringify(obj, [false], 3)
@@ -420,7 +420,7 @@ test('array nulls, array replacer and indentation', function (assert) {
   assert.end()
 })
 
-test('array and array replacer', function (assert) {
+t.test('array and array replacer', function (assert) {
   const obj = [null, null, 't', Infinity, true, false, [], {}]
   const expected = JSON.stringify(obj, [2])
   const actual = stringify(obj, [2])
@@ -428,7 +428,7 @@ test('array and array replacer', function (assert) {
   assert.end()
 })
 
-test('indentation with elements', function (assert) {
+t.test('indentation with elements', function (assert) {
   const obj = { a: 1, b: [null, 't', Infinity, true] }
   const expected = JSON.stringify(obj, null, 5)
   const actual = stringify(obj, null, 5)
@@ -436,7 +436,7 @@ test('indentation with elements', function (assert) {
   assert.end()
 })
 
-test('object with undefined values', function (assert) {
+t.test('object with undefined values', function (assert) {
   let obj = { a: 1, c: undefined, b: 'hello', d: [], e: {} }
 
   let expected = JSON.stringify(obj)
@@ -452,7 +452,7 @@ test('object with undefined values', function (assert) {
   assert.end()
 })
 
-test('undefined values and indented', function (assert) {
+t.test('undefined values and indented', function (assert) {
   let obj = { a: 1, c: undefined, b: 'hello' }
 
   let expected = JSON.stringify(obj, null, 2)
@@ -468,7 +468,7 @@ test('undefined values and indented', function (assert) {
   assert.end()
 })
 
-test('bigint option', function (assert) {
+t.test('bigint option', function (assert) {
   const stringifyNoBigInt = stringify.configure({ bigint: false })
   const stringifyBigInt = stringify.configure({ bigint: true })
 
@@ -490,7 +490,7 @@ test('bigint option', function (assert) {
   assert.end()
 })
 
-test('bigint option with replacer', function (assert) {
+t.test('bigint option with replacer', function (assert) {
   const stringifyBigInt = stringify.configure({ bigint: true })
 
   const obj = { a: new BigUint64Array([1n]), 0: 1n }
@@ -504,7 +504,7 @@ test('bigint option with replacer', function (assert) {
   assert.end()
 })
 
-test('bigint and typed array with indentation', function (assert) {
+t.test('bigint and typed array with indentation', function (assert) {
   const obj = { a: 1n, t: new Int8Array(1) }
   const expected = '{\n "a": 1,\n "t": {\n  "0": 0\n }\n}'
   const actual = stringify(obj, null, 1)
@@ -512,7 +512,7 @@ test('bigint and typed array with indentation', function (assert) {
   assert.end()
 })
 
-test('bigint and typed array without indentation', function (assert) {
+t.test('bigint and typed array without indentation', function (assert) {
   const obj = { a: 1n, t: new Int8Array(1) }
   const expected = '{"a":1,"t":{"0":0}}'
   const actual = stringify(obj, null, 0)
@@ -520,7 +520,7 @@ test('bigint and typed array without indentation', function (assert) {
   assert.end()
 })
 
-test('no bigint without indentation', function (assert) {
+t.test('no bigint without indentation', function (assert) {
   const stringifyNoBigInt = stringify.configure({ bigint: false })
   const obj = { a: 1n, t: new Int8Array(1) }
   const expected = '{"t":{"0":0}}'
@@ -529,7 +529,7 @@ test('no bigint without indentation', function (assert) {
   assert.end()
 })
 
-test('circular value option', function (assert) {
+t.test('circular value option', function (assert) {
   let stringifyCircularValue = stringify.configure({ circularValue: 'YEAH!!!' })
 
   const obj = {}
@@ -549,7 +549,7 @@ test('circular value option', function (assert) {
   assert.end()
 })
 
-test('non-deterministic', function (assert) {
+t.test('non-deterministic', function (assert) {
   const stringifyNonDeterministic = stringify.configure({ deterministic: false })
 
   const obj = { b: true, a: false }
@@ -563,7 +563,7 @@ test('non-deterministic', function (assert) {
   assert.end()
 })
 
-test('non-deterministic with replacer', function (assert) {
+t.test('non-deterministic with replacer', function (assert) {
   const stringifyNonDeterministic = stringify.configure({ deterministic: false, bigint: false })
 
   const obj = { b: true, a: 5n, c: Infinity, d: 4, e: [Symbol('null'), 5, Symbol('null')] }
@@ -579,7 +579,7 @@ test('non-deterministic with replacer', function (assert) {
   assert.end()
 })
 
-test('non-deterministic with indentation', function (assert) {
+t.test('non-deterministic with indentation', function (assert) {
   const stringifyNonDeterministic = stringify.configure({ deterministic: false, bigint: false })
 
   const obj = { b: true, a: 5, c: Infinity, d: false, e: [Symbol('null'), 5, Symbol('null')] }
@@ -591,7 +591,7 @@ test('non-deterministic with indentation', function (assert) {
   assert.end()
 })
 
-test('check typed arrays', function (assert) {
+t.test('check typed arrays', function (assert) {
   const obj = [null, null, new Float32Array(99), Infinity, Symbol('null'), true, false, [], {}, Symbol('null')]
   const expected = JSON.stringify(obj)
   const actual = stringify(obj)
@@ -599,7 +599,7 @@ test('check typed arrays', function (assert) {
   assert.end()
 })
 
-test('check small typed arrays with extra properties', function (assert) {
+t.test('check small typed arrays with extra properties', function (assert) {
   const obj = new Uint8Array(0)
   obj.foo = true
   const expected = JSON.stringify(obj)
@@ -608,7 +608,7 @@ test('check small typed arrays with extra properties', function (assert) {
   assert.end()
 })
 
-test('trigger sorting fast path for objects with lots of properties', function (assert) {
+t.test('trigger sorting fast path for objects with lots of properties', function (assert) {
   const obj = {}
   for (let i = 0; i < 1e4; i++) {
     obj[`a${i}`] = i
@@ -619,7 +619,7 @@ test('trigger sorting fast path for objects with lots of properties', function (
   assert.end()
 })
 
-test('indent properly; regression test for issue #16', function (assert) {
+t.test('indent properly; regression test for issue #16', function (assert) {
   const o = {
     collections: {},
     config: {
@@ -678,7 +678,7 @@ test('indent properly; regression test for issue #16', function (assert) {
   assert.end()
 })
 
-test('should stop if max depth is reached', (assert) => {
+t.test('should stop if max depth is reached', (assert) => {
   const serialize = stringify.configure({
     maximumDepth: 5
   })
@@ -696,11 +696,11 @@ test('should stop if max depth is reached', (assert) => {
     currentNestedObject = currentNestedObject[k]
   }
   const res = serialize(nested)
-  assert.ok(res.indexOf('"nest_4":"[Object]"') !== -1)
+  assert.ok(res.indexOf('"nest_4":"[Object]"'))
   assert.end()
 })
 
-test('should serialize only first 10 elements', (assert) => {
+t.test('should serialize only first 10 elements', (assert) => {
   const serialize = stringify.configure({
     maximumBreadth: 10
   })
@@ -716,7 +716,7 @@ test('should serialize only first 10 elements', (assert) => {
   assert.end()
 })
 
-test('should serialize only first 10 elements with custom replacer and indentation', (assert) => {
+t.test('should serialize only first 10 elements with custom replacer and indentation', (assert) => {
   const serialize = stringify.configure({
     maximumBreadth: 10
   })
@@ -744,7 +744,50 @@ test('should serialize only first 10 elements with custom replacer and indentati
   assert.end()
 })
 
-test('limit number of keys with array replacer', function (assert) {
+t.test('maximumDepth config', function (assert) {
+  const obj = {a: {b: {c: 1}}}
+
+ const serialize = stringify.configure({
+    maximumDepth: 2
+ })
+  
+  const result = serialize(obj, (key, val) => val)
+  assert.equal(result, '{"a":{"b":"[Object]"}}')
+  
+  const res2 = serialize(obj, ['a', 'b'])
+  assert.equal(res2, '{"a":{"b":{}}}')
+  
+  const res3 = serialize(obj, null, 2)
+  assert.matchSnapshot(res3)
+  
+  assert.end()
+
+
+})
+
+t.test('maximumBreadth config', function (assert) {
+  const obj = {a: ['a', 'b', 'c', 'd', 'e']}
+
+ const serialize = stringify.configure({
+    maximumBreadth: 3
+ })
+  
+  const result = serialize(obj, (key, val) => val)
+  assert.equal(result, '{"a":["a","b","c"]}')
+
+
+  const res2 = serialize(obj, ['a', 'b'])
+  assert.equal(res2, '{"a":["a","b","c"]}')
+
+  const res3 = serialize(obj, null, 2)
+  assert.matchSnapshot(res3)
+
+  const res4 = serialize({ a: { 'a': 1, 'b': 1, 'c': 1, 'd': 1, 'e': 1}}, null, 2)
+  assert.matchSnapshot(res4)
+
+  assert.end()
+})
+t.test('limit number of keys with array replacer', function (assert) {
   const replacer = ['a', 'b', 'c', 'd', 'e']
   const obj = {
     a: 'a',
@@ -771,7 +814,7 @@ test('limit number of keys with array replacer', function (assert) {
   assert.end()
 })
 
-test('limit number of keys in array', (assert) => {
+t.test('limit number of keys in array', (assert) => {
   const serialize = stringify.configure({
     maximumBreadth: 3
   })
@@ -786,7 +829,7 @@ test('limit number of keys in array', (assert) => {
   assert.end()
 })
 
-test('limit number of keys in typed array', (assert) => {
+t.test('limit number of keys in typed array', (assert) => {
   const serialize = stringify.configure({
     maximumBreadth: 3
   })
@@ -796,9 +839,17 @@ test('limit number of keys in typed array', (assert) => {
   for (let i = 0; i < MAX; i++) {
     arr[i] = i
   }
-  console.log(arr)
   const res = serialize(arr)
   const expected = '{"0":0,"1":1,"2":2}'
   assert.equal(res, expected)
+  assert.end()
+})
+
+t.test(`should throw when numeric option gets a string`, (assert) => {
+  assert.throws(() => {
+    stringify.configure({
+      maximumBreadth: '3'
+    })
+  })
   assert.end()
 })
