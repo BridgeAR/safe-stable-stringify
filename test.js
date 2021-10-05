@@ -609,13 +609,32 @@ t.test('check small typed arrays with extra properties', function (assert) {
 })
 
 t.test('trigger sorting fast path for objects with lots of properties', function (assert) {
+  const keys = []
   const obj = {}
   for (let i = 0; i < 1e4; i++) {
     obj[`a${i}`] = i
+    keys.push(`a${i}`)
   }
+
   const start = Date.now()
+
   stringify(obj)
   assert.ok(Date.now() - start < 100)
+  const now = Date.now()
+  const actualTime = now - start
+  keys.sort()
+  const expectedTime = Date.now() - now
+  assert.ok(Math.abs(actualTime - expectedTime) < 25)
+  assert.end()
+})
+
+t.test('maximum spacer length', function (assert) {
+  const input = { a: 0 }
+  const expected = `{\n${' '.repeat(10)}"a": 0\n}`
+  assert.equal(stringify(input, 11), expected)
+  assert.equal(stringify(input, 1e5), expected)
+  assert.equal(stringify(input, ' '.repeat(11)), expected)
+  assert.equal(stringify(input, ' '.repeat(1e3)), expected)
   assert.end()
 })
 

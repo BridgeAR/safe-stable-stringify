@@ -1,8 +1,14 @@
 'use strict'
 
 const stringify = main()
+
 stringify.configure = main
+stringify.stringify = stringify
+
 stringify.default = stringify
+
+exports.stringify = stringify
+exports.configure = main
 
 module.exports = stringify
 
@@ -125,24 +131,14 @@ function getCircularValueOption (options) {
   return circularValue === undefined ? '"[Circular]"' : circularValue
 }
 
-function getBigIntOption (options) {
-  if (options && Object.prototype.hasOwnProperty.call(options, 'bigint')) {
-    var bigint = options.bigint
-    if (typeof bigint !== 'boolean') {
-      throw new TypeError('The "bigint" argument must be of type boolean')
+function getBooleanOption (options, key) {
+  if (options && Object.prototype.hasOwnProperty.call(options, key)) {
+    var value = options[key]
+    if (typeof value !== 'boolean') {
+      throw new TypeError(`The "${key}" argument must be of type boolean`)
     }
   }
-  return bigint === undefined ? true : bigint
-}
-
-function getDeterministicOption (options) {
-  if (options && Object.prototype.hasOwnProperty.call(options, 'deterministic')) {
-    var deterministic = options.deterministic
-    if (typeof deterministic !== 'boolean') {
-      throw new TypeError('The "deterministic" argument must be of type boolean')
-    }
-  }
-  return deterministic === undefined ? true : deterministic
+  return value === undefined ? true : value
 }
 
 function getNumericOption (options, key) {
@@ -157,10 +153,11 @@ function getNumericOption (options, key) {
 
 function main (options) {
   const circularValue = getCircularValueOption(options)
-  const bigint = getBigIntOption(options)
-  const deterministic = getDeterministicOption(options)
+  const bigint = getBooleanOption(options, 'bigint')
+  const deterministic = getBooleanOption(options, 'deterministic')
   const maximumDepth = getNumericOption(options, 'maximumDepth')
   const maximumBreadth = getNumericOption(options, 'maximumBreadth')
+
   // Full version: supports all options
   function stringifyFullFn (key, parent, stack, replacer, spacer, indentation) {
     let value = parent[key]
@@ -557,9 +554,9 @@ function main (options) {
     if (arguments.length > 1) {
       let spacer = ''
       if (typeof space === 'number') {
-        spacer = ' '.repeat(space)
+        spacer = ' '.repeat(Math.min(space, 10))
       } else if (typeof space === 'string') {
-        spacer = space
+        spacer = space.slice(0, 10)
       }
       if (replacer != null) {
         if (typeof replacer === 'function') {

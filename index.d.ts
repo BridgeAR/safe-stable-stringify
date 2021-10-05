@@ -1,5 +1,5 @@
-declare function stringify(value: any, replacer?: (key: string, value: any) => any, space?: string | number): string;
-declare function stringify(value: any, replacer?: (number | string)[] | null, space?: string | number): string;
+export function stringify(value: any, replacer?: (key: string, value: any) => any, space?: string | number): string;
+export function stringify(value: any, replacer?: (number | string)[] | null, space?: string | number): string;
 
 export interface StringifyOptions {
   bigint?: boolean,
@@ -9,8 +9,10 @@ export interface StringifyOptions {
   maximumDepth?: number,
 }
 
-declare function configure(StringifyOptions): stringify;
+export namespace stringify {
+  export function configure(options: StringifyOptions): typeof stringify;
+}
 
-stringify.configure = configure;
+export function configure(options: StringifyOptions): typeof stringify;
 
 export default stringify;
