@@ -5,7 +5,7 @@
  * Make sure to inspect the output below.  Do not ignore changes!
  */
 'use strict'
-exports[`test.js TAP maximumBreadth config > must match snapshot 1`] = `
+exports['test.js TAP maximumBreadth config > must match snapshot 1'] = `
 {
   "a": [
     "a",
@@ -15,7 +15,7 @@ exports[`test.js TAP maximumBreadth config > must match snapshot 1`] = `
 }
 `
 
-exports[`test.js TAP maximumBreadth config > must match snapshot 2`] = `
+exports['test.js TAP maximumBreadth config > must match snapshot 2'] = `
 {
   "a": {
     "[DEBUG]": "2 keys not stringified",
@@ -26,7 +26,7 @@ exports[`test.js TAP maximumBreadth config > must match snapshot 2`] = `
 }
 `
 
-exports[`test.js TAP maximumDepth config > must match snapshot 1`] = `
+exports['test.js TAP maximumDepth config > must match snapshot 1'] = `
 {
   "a": {
     "b": "[Object]"

@@ -1,4 +1,4 @@
-const t  = require('tap')
+const t = require('tap')
 const stringify = require('./')
 const clone = require('clone')
 
@@ -764,36 +764,33 @@ t.test('should serialize only first 10 elements with custom replacer and indenta
 })
 
 t.test('maximumDepth config', function (assert) {
-  const obj = {a: {b: {c: 1}}}
+  const obj = { a: { b: { c: 1 } } }
 
- const serialize = stringify.configure({
+  const serialize = stringify.configure({
     maximumDepth: 2
- })
-  
+  })
+
   const result = serialize(obj, (key, val) => val)
   assert.equal(result, '{"a":{"b":"[Object]"}}')
-  
+
   const res2 = serialize(obj, ['a', 'b'])
   assert.equal(res2, '{"a":{"b":{}}}')
-  
+
   const res3 = serialize(obj, null, 2)
   assert.matchSnapshot(res3)
-  
+
   assert.end()
-
-
 })
 
 t.test('maximumBreadth config', function (assert) {
-  const obj = {a: ['a', 'b', 'c', 'd', 'e']}
+  const obj = { a: ['a', 'b', 'c', 'd', 'e'] }
 
- const serialize = stringify.configure({
+  const serialize = stringify.configure({
     maximumBreadth: 3
- })
-  
+  })
+
   const result = serialize(obj, (key, val) => val)
   assert.equal(result, '{"a":["a","b","c"]}')
-
 
   const res2 = serialize(obj, ['a', 'b'])
   assert.equal(res2, '{"a":["a","b","c"]}')
@@ -801,7 +798,7 @@ t.test('maximumBreadth config', function (assert) {
   const res3 = serialize(obj, null, 2)
   assert.matchSnapshot(res3)
 
-  const res4 = serialize({ a: { 'a': 1, 'b': 1, 'c': 1, 'd': 1, 'e': 1}}, null, 2)
+  const res4 = serialize({ a: { a: 1, b: 1, c: 1, d: 1, e: 1 } }, null, 2)
   assert.matchSnapshot(res4)
 
   assert.end()
@@ -864,7 +861,7 @@ t.test('limit number of keys in typed array', (assert) => {
   assert.end()
 })
 
-t.test(`should throw when numeric option gets a string`, (assert) => {
+t.test('should throw when numeric option gets a string', (assert) => {
   assert.throws(() => {
     stringify.configure({
       maximumBreadth: '3'

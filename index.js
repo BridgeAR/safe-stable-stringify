@@ -167,7 +167,6 @@ function main (options) {
     }
     value = replacer.call(parent, key, value)
 
-
     switch (typeof value) {
       case 'string':
         return `"${strEscape(value)}"`
