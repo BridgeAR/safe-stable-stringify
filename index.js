@@ -557,6 +557,7 @@ function main (options) {
       } else if (typeof space === 'string') {
         spacer = space.slice(0, 10)
       }
+
       if (replacer != null) {
         if (typeof replacer === 'function') {
           return stringifyFullFn('', { '': value }, [], replacer, spacer, '')

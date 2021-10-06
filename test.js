@@ -631,10 +631,10 @@ t.test('trigger sorting fast path for objects with lots of properties', function
 t.test('maximum spacer length', function (assert) {
   const input = { a: 0 }
   const expected = `{\n${' '.repeat(10)}"a": 0\n}`
-  assert.equal(stringify(input, 11), expected)
-  assert.equal(stringify(input, 1e5), expected)
-  assert.equal(stringify(input, ' '.repeat(11)), expected)
-  assert.equal(stringify(input, ' '.repeat(1e3)), expected)
+  assert.equal(stringify(input, null, 11), expected)
+  assert.equal(stringify(input, null, 1e5), expected)
+  assert.equal(stringify(input, null, ' '.repeat(11)), expected)
+  assert.equal(stringify(input, null, ' '.repeat(1e3)), expected)
   assert.end()
 })
 
