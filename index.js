@@ -1,14 +1,19 @@
 'use strict'
 
-const stringify = main()
+const stringify = configure()
 
-stringify.configure = main
+// @ts-expect-error
+stringify.configure = configure
+// @ts-expect-error
 stringify.stringify = stringify
 
+// @ts-expect-error
 stringify.default = stringify
 
+// @ts-expect-error used for named export
 exports.stringify = stringify
-exports.configure = main
+// @ts-expect-error used for named export
+exports.configure = configure
 
 module.exports = stringify
 
@@ -170,7 +175,7 @@ function getUniqueReplacerSet (replacerArray) {
   return replacerSet
 }
 
-function main (options) {
+function configure (options) {
   const circularValue = getCircularValueOption(options)
   const bigint = getBooleanOption(options, 'bigint')
   const deterministic = getBooleanOption(options, 'deterministic')

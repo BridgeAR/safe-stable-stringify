@@ -1,5 +1,5 @@
 const { test } = require('tap')
-const stringify = require('./')
+const { stringify } = require('./index.js')
 const clone = require('clone')
 
 test('circular reference to root', function (assert) {
@@ -154,22 +154,27 @@ test('double child circular reference', function (assert) {
 })
 
 test('child circular reference with toJSON', function (assert) {
-  // Create a test object that has an overriden `toJSON` property
+  // Create a test object that has an overridden `toJSON` property
   TestObject.prototype.toJSON = function () { return { special: 'case' } }
-  function TestObject (content) {}
+  function TestObject () {}
 
   // Creating a simple circular object structure
   const parentObject = {}
   parentObject.childObject = new TestObject()
+  // @ts-expect-error
   parentObject.childObject.parentObject = parentObject
 
   // Creating a simple circular object structure
   const otherParentObject = new TestObject()
+  // @ts-expect-error
   otherParentObject.otherChildObject = {}
+  // @ts-expect-error
   otherParentObject.otherChildObject.otherParentObject = otherParentObject
 
   // Making sure our original tests work
+  // @ts-expect-error
   assert.same(parentObject.childObject.parentObject, parentObject)
+  // @ts-expect-error
   assert.same(otherParentObject.otherChildObject.otherParentObject, otherParentObject)
 
   // Should both be idempotent
@@ -177,7 +182,9 @@ test('child circular reference with toJSON', function (assert) {
   assert.equal(stringify(otherParentObject), '{"special":"case"}')
 
   // Therefore the following assertion should be `true`
+  // @ts-expect-error
   assert.same(parentObject.childObject.parentObject, parentObject)
+  // @ts-expect-error
   assert.same(otherParentObject.otherChildObject.otherParentObject, otherParentObject)
 
   assert.end()
@@ -212,6 +219,7 @@ test('nested child circular reference in toJSON', function (assert) {
   var a = {
     b: {
       toJSON: function () {
+        // @ts-expect-error
         a.b = 2
         return '[Redacted]'
       }
@@ -219,6 +227,7 @@ test('nested child circular reference in toJSON', function (assert) {
     baz: {
       circle,
       toJSON: function () {
+        // @ts-expect-error
         a.baz = circle
         return '[Redacted]'
       }
@@ -250,6 +259,7 @@ test('nested child circular reference in toJSON', function (assert) {
 test('invalid replacer being ignored', function (assert) {
   const obj = { a: true }
 
+  // @ts-expect-error
   const actual = stringify(obj, 'invalidReplacer')
   const expected = stringify(obj)
   assert.equal(actual, expected)
@@ -414,7 +424,9 @@ test('array nulls and replacer', function (assert) {
 
 test('array nulls, array replacer and indentation', function (assert) {
   const obj = [null, null, [], {}]
+  // @ts-expect-error
   const expected = JSON.stringify(obj, [false], 3)
+  // @ts-expect-error
   const actual = stringify(obj, [false], 3)
   assert.equal(actual, expected)
   assert.end()
@@ -443,6 +455,7 @@ test('object with undefined values', function (assert) {
   let actual = stringify(obj)
   assert.equal(actual, expected)
 
+  // @ts-expect-error
   obj = { b: 'hello', a: undefined, c: 1 }
 
   expected = JSON.stringify(obj)
@@ -541,6 +554,7 @@ test('circular value option', function (assert) {
   assert.equal(actual, expected)
   assert.equal(stringify(obj), '{"circular":"[Circular]"}')
 
+  // @ts-expect-error
   assert.throws(() => stringify.configure({ circularValue: { objects: 'are not allowed' } }), /circularValue/)
 
   stringifyCircularValue = stringify.configure({ circularValue: null })
@@ -558,6 +572,7 @@ test('non-deterministic', function (assert) {
   const actual = stringifyNonDeterministic(obj)
   assert.equal(actual, expected)
 
+  // @ts-expect-error
   assert.throws(() => stringify.configure({ deterministic: 1 }), /deterministic/)
 
   assert.end()
@@ -601,6 +616,7 @@ test('check typed arrays', function (assert) {
 
 test('check small typed arrays with extra properties', function (assert) {
   const obj = new Uint8Array(0)
+  // @ts-expect-error
   obj.foo = true
   let expected = JSON.stringify(obj)
   let actual = stringify(obj)
@@ -685,6 +701,7 @@ test('indent properly; regression test for issue #16', function (assert) {
     indentedJSONArrayEmpty
   )
   assert.equal(
+    // @ts-ignore
     stringify(o, (k, v) => v, 2),
     indentedJSONReplacer
   )
@@ -703,6 +720,7 @@ test('indent properly; regression test for issue #16', function (assert) {
     indentedJSON.replace(circularIdentifier, circularReplacement)
   )
   assert.equal(
+    // @ts-ignore
     stringify(o, (k, v) => v, 2),
     indentedJSONReplacer.replace(circularIdentifier, circularReplacement)
   )
@@ -951,8 +969,7 @@ test('array replacer entries are unique', (assert) => {
   const replacer = ['b', {}, [], 0, 'b', '0']
   // @ts-expect-error
   const actual = stringify(input, replacer)
-  // @ts-expect-error JSON.stringify does not prohibit passing through objects
-  // as replacer value.
+  // @ts-expect-error
   const expected = JSON.stringify(input, replacer)
   assert.equal(actual, expected)
 
@@ -962,7 +979,7 @@ test('array replacer entries are unique', (assert) => {
 test('should throw when maximumBreadth receives malformed input', (assert) => {
   assert.throws(() => {
     stringify.configure({
-      // @ts-expect-error it is expected to fail for wrong types.
+      // @ts-expect-error
       maximumBreadth: '3'
     })
   })
