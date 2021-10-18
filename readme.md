@@ -47,12 +47,14 @@ stringify(circular, ['a', 'b'], 2)
 * `circularValue` {string|null} Define the value for circular references. **Default:** `[Circular]`.
 * `deterministic` {boolean} If `true`, guarantee a deterministic key order
   instead of relying on the insertion order. **Default:** `true`.
-* `maximumBreadth` {number} Maximum number of entries to serialize per object.
-The serialized output contains a `[DEBUG]` property to inform the user that not
-all keys have been serialized. **Default:** `Infinity`
-* `maximumDepth` {number} Maximum number of object nesting levels that will be
-serialized. Objects at the maximum level are serialized as `'[Object]'` and
-arrays as `'[Array]'`. **Default:** `Infinity`
+* `maximumBreadth` {number} Maximum number of entries to serialize per object
+  (at least one). The serialized output contains information about how many
+  entries have not been serialized. Ignored properties are counted as well
+  (e.g., properties with symbol values). Using the array replacer overrules this
+  option. **Default:** `Infinity`
+* `maximumDepth` {number} Maximum number of object nesting levels (at least 1)
+  that will be serialized. Objects at the maximum level are serialized as
+  `'[Object]'` and arrays as `'[Array]'`. **Default:** `Infinity`
 * Returns: {function} A stringify function with the options applied.
 
 ```js
@@ -62,6 +64,8 @@ const stringify = configure({
   bigint: true,
   circularValue: 'Magic circle!',
   deterministic: false,
+  maximumDepth: 1,
+  maximumBreadth: 4
 })
 
 const circular = {
@@ -70,19 +74,18 @@ const circular = {
   deterministic: "I don't think so",
 }
 circular.circular = circular
+circular.ignored = true
+circular.alsoIgnored = 'Yes!'
 
 const stringified = stringify(circular, null, 4)
 
 console.log(stringified)
 // {
 //     "bigint": 999999999999999999,
-//     "typed": {
-//         "0": 0,
-//         "1": 0,
-//         "2": 0
-//     },
+//     "typed": "[Object]",
 //     "deterministic": "I don't think so",
-//     "circular": "Magic circle!"
+//     "circular": "Magic circle!",
+//     "...": "2 items not stringified"
 // }
 ```
 
