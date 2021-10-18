@@ -31,7 +31,7 @@
     "tsc": "tsc"
   },
   "engines": {
-    "node": ">=12"
+    "node": ">=10"
   },
   "author": "Ruben Bridgewater",
   "license": "MIT",
