@@ -95,12 +95,12 @@ test('circular arrays', function (assert) {
 test('nested circular arrays', function (assert) {
   const fixture = []
   fixture.push(
-    { name: 'Jon Snow', bastards: fixture },
-    { name: 'Ramsay Bolton', bastards: fixture }
+    { name: 'Jon Snow', circular: fixture },
+    { name: 'Ramsay Bolton', circular: fixture }
   )
   const expected = JSON.stringify([
-    { bastards: '[Circular]', name: 'Jon Snow' },
-    { bastards: '[Circular]', name: 'Ramsay Bolton' }
+    { circular: '[Circular]', name: 'Jon Snow' },
+    { circular: '[Circular]', name: 'Ramsay Bolton' }
   ])
   const actual = stringify(fixture)
   assert.equal(actual, expected)
@@ -940,6 +940,20 @@ test('show skipped keys even non were serliazable', (assert) => {
   assert.equal(actual, expected)
 
   actual = serialize(input, ['a', 'b', 'c'])
+  assert.equal(actual, expected)
+
+  assert.end()
+})
+
+test('array replacer entries are unique', (assert) => {
+  const input = { 0: 0, b: 1 }
+
+  const replacer = ['b', {}, [], 0, 'b', '0']
+  // @ts-expect-error
+  const actual = stringify(input, replacer)
+  // @ts-expect-error JSON.stringify does not prohibit passing through objects
+  // as replacer value.
+  const expected = JSON.stringify(input, replacer)
   assert.equal(actual, expected)
 
   assert.end()

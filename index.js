@@ -39,9 +39,6 @@ function escapeFn (str) {
 }
 
 // Escape control characters, double quotes and the backslash.
-// Note: it is faster to run this only once for a big string instead of only for
-// the parts that it is necessary for. But this is only true if we do not add
-// extra indentation to the string before.
 function strEscape (str) {
   // Some magic numbers that worked out fine while benchmarking with v8 8.0
   if (str.length < 5000 && !strEscapeSequencesRegExp.test(str)) {
@@ -159,6 +156,18 @@ function getItemCount (number) {
     return '1 item'
   }
   return `${number} items`
+}
+
+function getUniqueReplacerSet (replacerArray) {
+  const replacerSet = new Set()
+  for (const value of replacerArray) {
+    if (typeof value === 'string') {
+      replacerSet.add(value)
+    } else if (typeof value === 'number') {
+      replacerSet.add(String(value))
+    }
+  }
+  return replacerSet
 }
 
 function main (options) {
@@ -330,7 +339,7 @@ function main (options) {
           stack.pop()
           return `[${res}]`
         }
-        if (replacer.length === 0) {
+        if (replacer.size === 0) {
           return '{}'
         }
         stack.push(value)
@@ -342,12 +351,10 @@ function main (options) {
         }
         let separator = ''
         for (const key of replacer) {
-          if (typeof key === 'string' || typeof key === 'number') {
-            const tmp = stringifyFullArr(key, value[key], stack, replacer, spacer, indentation)
-            if (tmp !== undefined) {
-              res += `${separator}"${strEscape(key)}":${whitespace}${tmp}`
-              separator = join
-            }
+          const tmp = stringifyFullArr(key, value[key], stack, replacer, spacer, indentation)
+          if (tmp !== undefined) {
+            res += `${separator}"${strEscape(key)}":${whitespace}${tmp}`
+            separator = join
           }
         }
         if (spacer !== '' && separator.length > 1) {
@@ -469,7 +476,6 @@ function main (options) {
     }
   }
 
-  // Simple without any options
   function stringifySimple (key, value, stack) {
     switch (typeof value) {
       case 'string':
@@ -576,10 +582,10 @@ function main (options) {
           return stringifyFullFn('', { '': value }, [], replacer, spacer, '')
         }
         if (Array.isArray(replacer)) {
-          return stringifyFullArr('', value, [], replacer, spacer, '')
+          return stringifyFullArr('', value, [], getUniqueReplacerSet(replacer), spacer, '')
         }
       }
-      if (spacer !== '') {
+      if (spacer.length !== 0) {
         return stringifyIndent('', value, [], spacer, '')
       }
     }

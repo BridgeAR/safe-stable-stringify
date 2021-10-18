@@ -6,6 +6,7 @@
 - Added `maximumDepth` option to limit stringification at a specific nesting depth
 - Fixed maximum spacer length (10)
 - Fixed TypeScript definition
+- Fixed duplicated array replacer values serialized more than once
 
 ## v2.0.0
 
