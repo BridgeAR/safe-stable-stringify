@@ -177,7 +177,7 @@ function main (options) {
   const maximumDepth = getPositiveIntegerOption(options, 'maximumDepth')
   const maximumBreadth = getPositiveIntegerOption(options, 'maximumBreadth')
 
-  function stringifyFullFn (key, parent, stack, replacer, spacer, indentation) {
+  function stringifyFnReplacer (key, parent, stack, replacer, spacer, indentation) {
     let value = parent[key]
 
     if (typeof value === 'object' && value !== null && typeof value.toJSON === 'function') {
@@ -216,11 +216,11 @@ function main (options) {
           const maximumValuesToStringify = Math.min(value.length, maximumBreadth)
           let i = 0
           for (; i < maximumValuesToStringify - 1; i++) {
-            const tmp = stringifyFullFn(i, value, stack, replacer, spacer, indentation)
+            const tmp = stringifyFnReplacer(i, value, stack, replacer, spacer, indentation)
             res += tmp !== undefined ? tmp : 'null'
             res += join
           }
-          const tmp = stringifyFullFn(i, value, stack, replacer, spacer, indentation)
+          const tmp = stringifyFnReplacer(i, value, stack, replacer, spacer, indentation)
           res += tmp !== undefined ? tmp : 'null'
           if (value.length - 1 > maximumBreadth) {
             const removedKeys = value.length - maximumBreadth - 1
@@ -261,7 +261,7 @@ function main (options) {
         stack.push(value)
         for (let i = 0; i < maximumPropertiesToStringify; i++) {
           const key = keys[i]
-          const tmp = stringifyFullFn(key, value, stack, replacer, spacer, indentation)
+          const tmp = stringifyFnReplacer(key, value, stack, replacer, spacer, indentation)
           if (tmp !== undefined) {
             res += `${separator}"${strEscape(key)}":${whitespace}${tmp}`
             separator = join
@@ -287,7 +287,7 @@ function main (options) {
     }
   }
 
-  function stringifyFullArr (key, value, stack, replacer, spacer, indentation) {
+  function stringifyArrayReplacer (key, value, stack, replacer, spacer, indentation) {
     if (typeof value === 'object' && value !== null && typeof value.toJSON === 'function') {
       value = value.toJSON(key)
     }
@@ -323,11 +323,11 @@ function main (options) {
           const maximumValuesToStringify = Math.min(value.length, maximumBreadth)
           let i = 0
           for (; i < maximumValuesToStringify - 1; i++) {
-            const tmp = stringifyFullArr(i, value[i], stack, replacer, spacer, indentation)
+            const tmp = stringifyArrayReplacer(i, value[i], stack, replacer, spacer, indentation)
             res += tmp !== undefined ? tmp : 'null'
             res += join
           }
-          const tmp = stringifyFullArr(i, value[i], stack, replacer, spacer, indentation)
+          const tmp = stringifyArrayReplacer(i, value[i], stack, replacer, spacer, indentation)
           res += tmp !== undefined ? tmp : 'null'
           if (value.length - 1 > maximumBreadth) {
             const removedKeys = value.length - maximumBreadth - 1
@@ -351,7 +351,7 @@ function main (options) {
         }
         let separator = ''
         for (const key of replacer) {
-          const tmp = stringifyFullArr(key, value[key], stack, replacer, spacer, indentation)
+          const tmp = stringifyArrayReplacer(key, value[key], stack, replacer, spacer, indentation)
           if (tmp !== undefined) {
             res += `${separator}"${strEscape(key)}":${whitespace}${tmp}`
             separator = join
@@ -372,7 +372,6 @@ function main (options) {
     }
   }
 
-  // Supports only the spacer option
   function stringifyIndent (key, value, stack, spacer, indentation) {
     switch (typeof value) {
       case 'string':
@@ -579,10 +578,10 @@ function main (options) {
       }
       if (replacer != null) {
         if (typeof replacer === 'function') {
-          return stringifyFullFn('', { '': value }, [], replacer, spacer, '')
+          return stringifyFnReplacer('', { '': value }, [], replacer, spacer, '')
         }
         if (Array.isArray(replacer)) {
-          return stringifyFullArr('', value, [], getUniqueReplacerSet(replacer), spacer, '')
+          return stringifyArrayReplacer('', value, [], getUniqueReplacerSet(replacer), spacer, '')
         }
       }
       if (spacer.length !== 0) {
