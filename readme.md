@@ -47,6 +47,14 @@ stringify(circular, ['a', 'b'], 2)
 * `circularValue` {string|null} Define the value for circular references. **Default:** `[Circular]`.
 * `deterministic` {boolean} If `true`, guarantee a deterministic key order
   instead of relying on the insertion order. **Default:** `true`.
+* `maximumBreadth` {number} Maximum number of entries to serialize per object
+  (at least one). The serialized output contains information about how many
+  entries have not been serialized. Ignored properties are counted as well
+  (e.g., properties with symbol values). Using the array replacer overrules this
+  option. **Default:** `Infinity`
+* `maximumDepth` {number} Maximum number of object nesting levels (at least 1)
+  that will be serialized. Objects at the maximum level are serialized as
+  `'[Object]'` and arrays as `'[Array]'`. **Default:** `Infinity`
 * Returns: {function} A stringify function with the options applied.
 
 ```js
@@ -56,6 +64,8 @@ const stringify = configure({
   bigint: true,
   circularValue: 'Magic circle!',
   deterministic: false,
+  maximumDepth: 1,
+  maximumBreadth: 4
 })
 
 const circular = {
@@ -64,19 +74,18 @@ const circular = {
   deterministic: "I don't think so",
 }
 circular.circular = circular
+circular.ignored = true
+circular.alsoIgnored = 'Yes!'
 
 const stringified = stringify(circular, null, 4)
 
 console.log(stringified)
 // {
 //     "bigint": 999999999999999999,
-//     "typed": {
-//         "0": 0,
-//         "1": 0,
-//         "2": 0
-//     },
+//     "typed": "[Object]",
 //     "deterministic": "I don't think so",
-//     "circular": "Magic circle!"
+//     "circular": "Magic circle!",
+//     "...": "2 items not stringified"
 // }
 ```
 
@@ -85,45 +94,52 @@ console.log(stringified)
 1. Replace circular structures with the string `[Circular]` (the value may be changed).
 1. Sorted keys instead of using the insertion order (it is possible to deactivate this).
 1. BigInt values are stringified as regular number instead of throwing a TypeError.
+1. Boxed primitives (e.g., `Number(5)`) are not unboxed and are handled as
+   regular object.
 
-Those are the only differences to the real JSON.stringify. This is a side effect
-free variant and [`toJSON`][], [`replacer`][] and the [`spacer`][] work the same
-as with the native JSON.stringify.
+Those are the only differences to `JSON.stringify()`. This is a side effect free
+variant and [`toJSON`][], [`replacer`][] and the [`spacer`][] work the same as
+with `JSON.stringify()`.
 
 ## Performance / Benchmarks
 
 Currently this is by far the fastest known stable stringify implementation.
 This is especially important for big objects and TypedArrays.
 
-(Lenovo T450s with a i7-5600U CPU using Node.js 8.9.4)
+(Dell Precision 5540, i7-9850H CPU @ 2.60GHz, Node.js 16.11.1)
 
 ```md
-simple:   simple object x 1,733,045 ops/sec ±1.82% (86 runs sampled)
-simple:   circular      x 717,021 ops/sec ±0.78% (91 runs sampled)
-simple:   deep          x 17,674 ops/sec ±0.77% (94 runs sampled)
-simple:   deep circular x 17,396 ops/sec ±0.70% (93 runs sampled)
+simple:   simple object x 3,463,894 ops/sec ±0.44% (98 runs sampled)
+simple:   circular      x 1,236,007 ops/sec ±0.46% (99 runs sampled)
+simple:   deep          x 18,942 ops/sec ±0.41% (93 runs sampled)
+simple:   deep circular x 18,690 ops/sec ±0.72% (96 runs sampled)
 
-replacer:   simple object x 1,126,942 ops/sec ±2.22% (91 runs sampled)
-replacer:   circular      x 541,243 ops/sec ±0.87% (94 runs sampled)
-replacer:   deep          x 17,229 ops/sec ±0.90% (94 runs sampled)
-replacer:   deep circular x 16,948 ops/sec ±0.86% (97 runs sampled)
+replacer:   simple object x 2,664,940 ops/sec ±0.31% (98 runs sampled)
+replacer:   circular      x 1,015,981 ops/sec ±0.09% (99 runs sampled)
+replacer:   deep          x 17,328 ops/sec ±0.38% (97 runs sampled)
+replacer:   deep circular x 17,071 ops/sec ±0.21% (98 runs sampled)
 
-array:   simple object x 1,470,751 ops/sec ±0.84% (95 runs sampled)
-array:   circular      x 1,360,269 ops/sec ±2.94% (91 runs sampled)
-array:   deep          x 1,289,785 ops/sec ±2.82% (87 runs sampled)
-array:   deep circular x 1,400,577 ops/sec ±1.00% (92 runs sampled)
+array:   simple object x 3,869,608 ops/sec ±0.22% (98 runs sampled)
+array:   circular      x 3,853,943 ops/sec ±0.45% (96 runs sampled)
+array:   deep          x 3,563,227 ops/sec ±0.20% (100 runs sampled)
+array:   deep circular x 3,286,475 ops/sec ±0.07% (100 runs sampled)
+
+indentation:   simple object x 2,183,162 ops/sec ±0.66% (97 runs sampled)
+indentation:   circular      x 872,538 ops/sec ±0.57% (98 runs sampled)
+indentation:   deep          x 16,795 ops/sec ±0.48% (93 runs sampled)
+indentation:   deep circular x 16,443 ops/sec ±0.40% (97 runs sampled)
 ```
 
 Comparing `safe-stable-stringify` with known alternatives:
 
 ```md
-fast-json-stable-stringify x 9,336 ops/sec ±0.64% (90 runs sampled)
-json-stable-stringify x 7,512 ops/sec ±0.63% (91 runs sampled)
-fast-stable-stringify x 11,674 ops/sec ±0.58% (92 runs sampled)
-faster-stable-stringify x 8,893 ops/sec ±0.51% (92 runs sampled)
-json-stringify-deterministic x 6,240 ops/sec ±0.68% (94 runs sampled)
-fast-safe-stringify x 15,939 ops/sec ±0.42% (96 runs sampled)
-this x 24,048 ops/sec ±0.44% (91 runs sampled)
+fast-json-stable-stringify x 18,765 ops/sec ±0.71% (94 runs sampled)
+json-stable-stringify x 13,870 ops/sec ±0.72% (94 runs sampled)
+fast-stable-stringify x 21,343 ops/sec ±0.33% (95 runs sampled)
+faster-stable-stringify x 17,707 ops/sec ±0.44% (97 runs sampled)
+json-stringify-deterministic x 11,208 ops/sec ±0.57% (98 runs sampled)
+fast-safe-stringify x 21,460 ops/sec ±0.75% (99 runs sampled)
+this x 30,367 ops/sec ±0.39% (96 runs sampled)
 
 The fastest is this
 ```

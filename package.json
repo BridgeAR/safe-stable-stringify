@@ -23,16 +23,22 @@
   "main": "index.js",
   "scripts": {
     "test": "standard && tap test.js",
+    "tap": "tap test.js",
+    "tap:only": "tap test.js --watch --only",
     "benchmark": "node benchmark.js",
     "compare": "node compare.js",
     "lint": "standard --fix",
     "tsc": "tsc"
+  },
+  "engines": {
+    "node": ">=10"
   },
   "author": "Ruben Bridgewater",
   "license": "MIT",
   "typings": "index.d.ts",
   "devDependencies": {
     "@types/json-stable-stringify": "^1.0.32",
+    "@types/node": "^16.11.1",
     "benchmark": "^2.1.4",
     "clone": "^2.1.2",
     "fast-json-stable-stringify": "^2.1.0",

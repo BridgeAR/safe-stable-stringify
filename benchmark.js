@@ -2,7 +2,7 @@
 
 const Benchmark = require('benchmark')
 const suite = new Benchmark.Suite()
-const stringify = require('.')
+const stringify = require('.').configure({ deterministic: true })
 
 // eslint-disable-next-line
 const array = Array({ length: 10 }, (_, i) => i)

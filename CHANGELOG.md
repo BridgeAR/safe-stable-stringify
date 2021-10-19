@@ -1,9 +1,13 @@
 # Changelog
 
-## v2.0.1
+## v2.1.0
 
+- Added `maximumBreadth` option to limit stringification at a specific object or array "width" (number of properties / values)
+- Added `maximumDepth` option to limit stringification at a specific nesting depth
+- Implemented the [well formed stringify proposal](https://github.com/tc39/proposal-well-formed-stringify) that is now part of the spec
 - Fixed maximum spacer length (10)
 - Fixed TypeScript definition
+- Fixed duplicated array replacer values serialized more than once
 
 ## v2.0.0
 

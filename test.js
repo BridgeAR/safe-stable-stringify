@@ -1,5 +1,5 @@
 const { test } = require('tap')
-const stringify = require('./')
+const { stringify } = require('./index.js')
 const clone = require('clone')
 
 test('circular reference to root', function (assert) {
@@ -95,12 +95,12 @@ test('circular arrays', function (assert) {
 test('nested circular arrays', function (assert) {
   const fixture = []
   fixture.push(
-    { name: 'Jon Snow', bastards: fixture },
-    { name: 'Ramsay Bolton', bastards: fixture }
+    { name: 'Jon Snow', circular: fixture },
+    { name: 'Ramsay Bolton', circular: fixture }
   )
   const expected = JSON.stringify([
-    { bastards: '[Circular]', name: 'Jon Snow' },
-    { bastards: '[Circular]', name: 'Ramsay Bolton' }
+    { circular: '[Circular]', name: 'Jon Snow' },
+    { circular: '[Circular]', name: 'Ramsay Bolton' }
   ])
   const actual = stringify(fixture)
   assert.equal(actual, expected)
@@ -154,22 +154,27 @@ test('double child circular reference', function (assert) {
 })
 
 test('child circular reference with toJSON', function (assert) {
-  // Create a test object that has an overriden `toJSON` property
+  // Create a test object that has an overridden `toJSON` property
   TestObject.prototype.toJSON = function () { return { special: 'case' } }
-  function TestObject (content) {}
+  function TestObject () {}
 
   // Creating a simple circular object structure
   const parentObject = {}
   parentObject.childObject = new TestObject()
+  // @ts-expect-error
   parentObject.childObject.parentObject = parentObject
 
   // Creating a simple circular object structure
   const otherParentObject = new TestObject()
+  // @ts-expect-error
   otherParentObject.otherChildObject = {}
+  // @ts-expect-error
   otherParentObject.otherChildObject.otherParentObject = otherParentObject
 
   // Making sure our original tests work
+  // @ts-expect-error
   assert.same(parentObject.childObject.parentObject, parentObject)
+  // @ts-expect-error
   assert.same(otherParentObject.otherChildObject.otherParentObject, otherParentObject)
 
   // Should both be idempotent
@@ -177,7 +182,9 @@ test('child circular reference with toJSON', function (assert) {
   assert.equal(stringify(otherParentObject), '{"special":"case"}')
 
   // Therefore the following assertion should be `true`
+  // @ts-expect-error
   assert.same(parentObject.childObject.parentObject, parentObject)
+  // @ts-expect-error
   assert.same(otherParentObject.otherChildObject.otherParentObject, otherParentObject)
 
   assert.end()
@@ -212,6 +219,7 @@ test('nested child circular reference in toJSON', function (assert) {
   var a = {
     b: {
       toJSON: function () {
+        // @ts-expect-error
         a.b = 2
         return '[Redacted]'
       }
@@ -219,6 +227,7 @@ test('nested child circular reference in toJSON', function (assert) {
     baz: {
       circle,
       toJSON: function () {
+        // @ts-expect-error
         a.baz = circle
         return '[Redacted]'
       }
@@ -250,6 +259,7 @@ test('nested child circular reference in toJSON', function (assert) {
 test('invalid replacer being ignored', function (assert) {
   const obj = { a: true }
 
+  // @ts-expect-error
   const actual = stringify(obj, 'invalidReplacer')
   const expected = stringify(obj)
   assert.equal(actual, expected)
@@ -414,7 +424,9 @@ test('array nulls and replacer', function (assert) {
 
 test('array nulls, array replacer and indentation', function (assert) {
   const obj = [null, null, [], {}]
+  // @ts-expect-error
   const expected = JSON.stringify(obj, [false], 3)
+  // @ts-expect-error
   const actual = stringify(obj, [false], 3)
   assert.equal(actual, expected)
   assert.end()
@@ -443,6 +455,7 @@ test('object with undefined values', function (assert) {
   let actual = stringify(obj)
   assert.equal(actual, expected)
 
+  // @ts-expect-error
   obj = { b: 'hello', a: undefined, c: 1 }
 
   expected = JSON.stringify(obj)
@@ -541,6 +554,7 @@ test('circular value option', function (assert) {
   assert.equal(actual, expected)
   assert.equal(stringify(obj), '{"circular":"[Circular]"}')
 
+  // @ts-expect-error
   assert.throws(() => stringify.configure({ circularValue: { objects: 'are not allowed' } }), /circularValue/)
 
   stringifyCircularValue = stringify.configure({ circularValue: null })
@@ -558,6 +572,7 @@ test('non-deterministic', function (assert) {
   const actual = stringifyNonDeterministic(obj)
   assert.equal(actual, expected)
 
+  // @ts-expect-error
   assert.throws(() => stringify.configure({ deterministic: 1 }), /deterministic/)
 
   assert.end()
@@ -601,10 +616,24 @@ test('check typed arrays', function (assert) {
 
 test('check small typed arrays with extra properties', function (assert) {
   const obj = new Uint8Array(0)
+  // @ts-expect-error
   obj.foo = true
-  const expected = JSON.stringify(obj)
-  const actual = stringify(obj)
+  let expected = JSON.stringify(obj)
+  let actual = stringify(obj)
   assert.equal(actual, expected)
+
+  expected = JSON.stringify(obj, null, 2)
+  actual = stringify(obj, null, 2)
+  assert.equal(actual, expected)
+
+  expected = JSON.stringify(obj, ['foo'])
+  actual = stringify(obj, ['foo'])
+  assert.equal(actual, expected)
+
+  expected = JSON.stringify(obj, (a, b) => b)
+  actual = stringify(obj, (a, b) => b)
+  assert.equal(actual, expected)
+
   assert.end()
 })
 
@@ -624,17 +653,17 @@ test('trigger sorting fast path for objects with lots of properties', function (
   const actualTime = now - start
   keys.sort()
   const expectedTime = Date.now() - now
-  assert.ok(Math.abs(actualTime - expectedTime) < 25)
+  assert.ok(Math.abs(actualTime - expectedTime) < 50)
   assert.end()
 })
 
 test('maximum spacer length', function (assert) {
   const input = { a: 0 }
   const expected = `{\n${' '.repeat(10)}"a": 0\n}`
-  assert.equal(stringify(input, 11), expected)
-  assert.equal(stringify(input, 1e5), expected)
-  assert.equal(stringify(input, ' '.repeat(11)), expected)
-  assert.equal(stringify(input, ' '.repeat(1e3)), expected)
+  assert.equal(stringify(input, null, 11), expected)
+  assert.equal(stringify(input, null, 1e5), expected)
+  assert.equal(stringify(input, null, ' '.repeat(11)), expected)
+  assert.equal(stringify(input, null, ' '.repeat(1e3)), expected)
   assert.end()
 })
 
@@ -672,6 +701,7 @@ test('indent properly; regression test for issue #16', function (assert) {
     indentedJSONArrayEmpty
   )
   assert.equal(
+    // @ts-ignore
     stringify(o, (k, v) => v, 2),
     indentedJSONReplacer
   )
@@ -690,9 +720,296 @@ test('indent properly; regression test for issue #16', function (assert) {
     indentedJSON.replace(circularIdentifier, circularReplacement)
   )
   assert.equal(
+    // @ts-ignore
     stringify(o, (k, v) => v, 2),
     indentedJSONReplacer.replace(circularIdentifier, circularReplacement)
   )
 
+  assert.end()
+})
+
+test('should stop if max depth is reached', (assert) => {
+  const serialize = stringify.configure({
+    maximumDepth: 5
+  })
+  const nested = {}
+  const MAX_DEPTH = 10
+  let currentNestedObject = null
+  for (let i = 0; i < MAX_DEPTH; i++) {
+    const k = 'nest_' + i
+    if (!currentNestedObject) {
+      currentNestedObject = nested
+    }
+    currentNestedObject[k] = {
+      foo: 'bar'
+    }
+    currentNestedObject = currentNestedObject[k]
+  }
+  const res = serialize(nested)
+  assert.ok(res.indexOf('"nest_4":"[Object]"'))
+  assert.end()
+})
+
+test('should serialize only first 10 elements', (assert) => {
+  const serialize = stringify.configure({
+    maximumBreadth: 10
+  })
+  const breadth = {}
+  const MAX_BREADTH = 100
+  for (let i = 0; i < MAX_BREADTH; i++) {
+    const k = 'key_' + i
+    breadth[k] = 'foobar'
+  }
+  const res = serialize(breadth)
+  const expected = '{"key_0":"foobar","key_1":"foobar","key_10":"foobar","key_11":"foobar","key_12":"foobar","key_13":"foobar","key_14":"foobar","key_15":"foobar","key_16":"foobar","key_17":"foobar","...":"90 items not stringified"}'
+  assert.equal(res, expected)
+  assert.end()
+})
+
+test('should serialize only first 10 elements with custom replacer and indentation', (assert) => {
+  const serialize = stringify.configure({
+    maximumBreadth: 10,
+    maximumDepth: 1
+  })
+  const breadth = { a: Array.from({ length: 100 }, (_, i) => i) }
+  const MAX_BREADTH = 100
+  for (let i = 0; i < MAX_BREADTH; i++) {
+    const k = 'key_' + i
+    breadth[k] = 'foobar'
+  }
+  const res = serialize(breadth, (k, v) => v, 2)
+  const expected = `{
+  "a": "[Array]",
+  "key_0": "foobar",
+  "key_1": "foobar",
+  "key_10": "foobar",
+  "key_11": "foobar",
+  "key_12": "foobar",
+  "key_13": "foobar",
+  "key_14": "foobar",
+  "key_15": "foobar",
+  "key_16": "foobar",
+  "...": "91 items not stringified"
+}`
+  assert.equal(res, expected)
+  assert.end()
+})
+
+test('maximumDepth config', function (assert) {
+  const obj = { a: { b: { c: 1 }, a: [1, 2, 3] } }
+
+  const serialize = stringify.configure({
+    maximumDepth: 2
+  })
+
+  const result = serialize(obj, (key, val) => val)
+  assert.equal(result, '{"a":{"a":"[Array]","b":"[Object]"}}')
+
+  const res2 = serialize(obj, ['a', 'b'])
+  assert.equal(res2, '{"a":{"a":"[Array]","b":{}}}')
+
+  const json = JSON.stringify(obj, ['a', 'b'])
+  assert.equal(json, '{"a":{"a":[1,2,3],"b":{}}}')
+
+  const res3 = serialize(obj, null, 2)
+  assert.equal(res3, `{
+  "a": {
+    "a": "[Array]",
+    "b": "[Object]"
+  }
+}`)
+
+  const res4 = serialize(obj)
+  assert.equal(res4, '{"a":{"a":"[Array]","b":"[Object]"}}')
+
+  assert.end()
+})
+
+test('maximumBreadth config', function (assert) {
+  const obj = { a: ['a', 'b', 'c', 'd', 'e'] }
+
+  const serialize = stringify.configure({
+    maximumBreadth: 3
+  })
+
+  const result = serialize(obj, (key, val) => val)
+  assert.equal(result, '{"a":["a","b","c","... 1 item not stringified"]}')
+
+  const res2 = serialize(obj, ['a', 'b'])
+  assert.equal(res2, '{"a":["a","b","c","... 1 item not stringified"]}')
+
+  const res3 = serialize(obj, null, 2)
+  assert.equal(res3, `{
+  "a": [
+    "a",
+    "b",
+    "c",
+    "... 1 item not stringified"
+  ]
+}`)
+
+  const res4 = serialize({ a: { a: 1, b: 1, c: 1, d: 1, e: 1 } }, null, 2)
+  assert.equal(res4, `{
+  "a": {
+    "a": 1,
+    "b": 1,
+    "c": 1,
+    "...": "2 items not stringified"
+  }
+}`)
+
+  assert.end()
+})
+test('limit number of keys with array replacer', function (assert) {
+  const replacer = ['a', 'b', 'c', 'd', 'e']
+  const obj = {
+    a: 'a',
+    b: 'b',
+    c: 'c',
+    d: 'd',
+    e: 'e',
+    f: 'f',
+    g: 'g',
+    h: 'h'
+  }
+
+  const serialize = stringify.configure({
+    maximumBreadth: 3
+  })
+  const res = serialize(obj, replacer, 2)
+  const expected = `{
+  "a": "a",
+  "b": "b",
+  "c": "c",
+  "d": "d",
+  "e": "e"
+}`
+  assert.equal(res, expected)
+  assert.end()
+})
+
+test('limit number of keys in array', (assert) => {
+  const serialize = stringify.configure({
+    maximumBreadth: 3
+  })
+  const arr = []
+  const MAX_BREADTH = 100
+  for (let i = 0; i < MAX_BREADTH; i++) {
+    arr.push(i)
+  }
+  const res = serialize(arr)
+  const expected = '[0,1,2,"... 96 items not stringified"]'
+  assert.equal(res, expected)
+  assert.end()
+})
+
+test('limit number of keys in typed array', (assert) => {
+  const serialize = stringify.configure({
+    maximumBreadth: 3
+  })
+  const MAX = 100
+  const arr = new Int32Array(MAX)
+
+  for (let i = 0; i < MAX; i++) {
+    arr[i] = i
+  }
+  // @ts-expect-error we want to explicitly test this behavior.
+  arr.foobar = true
+  const res = serialize(arr)
+  const expected = '{"0":0,"1":1,"2":2,"...":"98 items not stringified"}'
+  assert.equal(res, expected)
+  const res2 = serialize(arr, (a, b) => b)
+  assert.equal(res2, expected)
+  const res3 = serialize(arr, [0, 1, 2])
+  assert.equal(res3, '{"0":0,"1":1,"2":2}')
+  const res4 = serialize(arr, null, 4)
+  assert.equal(res4, `{
+    "0": 0,
+    "1": 1,
+    "2": 2,
+    "...": "98 items not stringified"
+}`)
+  assert.end()
+})
+
+test('show skipped keys even non were serliazable', (assert) => {
+  const serialize = stringify.configure({
+    maximumBreadth: 1
+  })
+
+  const input = { a: Symbol('ignored'), b: Symbol('ignored') }
+
+  let actual = serialize(input)
+  let expected = '{"...":"1 item not stringified"}'
+  assert.equal(actual, expected)
+
+  actual = serialize(input, (a, b) => b)
+  assert.equal(actual, expected)
+
+  actual = serialize(input, null, 1)
+  expected = '{\n "...": "1 item not stringified"\n}'
+  assert.equal(actual, expected)
+
+  actual = serialize(input, (a, b) => b, 1)
+  assert.equal(actual, expected)
+
+  actual = serialize(input, ['a'])
+  expected = '{}'
+  assert.equal(actual, expected)
+
+  actual = serialize(input, ['a', 'b', 'c'])
+  assert.equal(actual, expected)
+
+  assert.end()
+})
+
+test('array replacer entries are unique', (assert) => {
+  const input = { 0: 0, b: 1 }
+
+  const replacer = ['b', {}, [], 0, 'b', '0']
+  // @ts-expect-error
+  const actual = stringify(input, replacer)
+  // @ts-expect-error
+  const expected = JSON.stringify(input, replacer)
+  assert.equal(actual, expected)
+
+  assert.end()
+})
+
+test('should throw when maximumBreadth receives malformed input', (assert) => {
+  assert.throws(() => {
+    stringify.configure({
+      // @ts-expect-error
+      maximumBreadth: '3'
+    })
+  })
+  assert.throws(() => {
+    stringify.configure({
+      maximumBreadth: 3.1
+    })
+  })
+  assert.throws(() => {
+    stringify.configure({
+      maximumBreadth: 0
+    })
+  })
+  assert.end()
+})
+
+test('check for well formed stringify implementation', (assert) => {
+  for (let i = 0; i < 2 ** 16; i++) {
+    const string = String.fromCharCode(i)
+    const actual = stringify(string)
+    const expected = JSON.stringify(string)
+    // Older Node.js versions do not use the well formed JSON implementation.
+    if (Number(process.version.split('.')[0].slice(1)) >= 12 || i < 0xd800 || i > 0xdfff) {
+      assert.equal(actual, expected)
+    } else {
+      assert.not(actual, expected)
+    }
+  }
+  // Trigger special case
+  const longStringEscape = stringify(`${'a'.repeat(100)}\uD800`)
+  assert.equal(longStringEscape, `"${'a'.repeat(100)}\\ud800"`)
   assert.end()
 })

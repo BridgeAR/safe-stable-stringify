@@ -1,21 +1,26 @@
 'use strict'
 
-const stringify = main()
+const stringify = configure()
 
-stringify.configure = main
+// @ts-expect-error
+stringify.configure = configure
+// @ts-expect-error
 stringify.stringify = stringify
 
+// @ts-expect-error
 stringify.default = stringify
 
+// @ts-expect-error used for named export
 exports.stringify = stringify
-exports.configure = main
+// @ts-expect-error used for named export
+exports.configure = configure
 
 module.exports = stringify
 
 // eslint-disable-next-line
-const strEscapeSequencesRegExp = /[\x00-\x1f\x22\x5c]/
+const strEscapeSequencesRegExp = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]/
 // eslint-disable-next-line
-const strEscapeSequencesReplacer = /[\x00-\x1f\x22\x5c]/g
+const strEscapeSequencesReplacer = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]/g
 
 // Escaped special characters. Use empty strings to fill up unused entries.
 const meta = [
@@ -35,13 +40,14 @@ const meta = [
 ]
 
 function escapeFn (str) {
-  return meta[str.charCodeAt(0)]
+  const charCode = str.charCodeAt(0)
+  return meta.length > charCode
+    ? meta[charCode]
+    : `\\u${charCode.toString(16).padStart(4, '0')}`
 }
 
-// Escape control characters, double quotes and the backslash.
-// Note: it is faster to run this only once for a big string instead of only for
-// the parts that it is necessary for. But this is only true if we do not add
-// extra indentation to the string before.
+// Escape C0 control characters, double quotes, the backslash and every code
+// unit with a numeric value in the inclusive range 0xD800 to 0xDFFF.
 function strEscape (str) {
   // Some magic numbers that worked out fine while benchmarking with v8 8.0
   if (str.length < 5000 && !strEscapeSequencesRegExp.test(str)) {
@@ -52,23 +58,17 @@ function strEscape (str) {
   }
   let result = ''
   let last = 0
-  let i = 0
-  for (; i < str.length; i++) {
+  for (let i = 0; i < str.length; i++) {
     const point = str.charCodeAt(i)
     if (point === 34 || point === 92 || point < 32) {
-      if (last === i) {
-        result += meta[point]
-      } else {
-        result += `${str.slice(last, i)}${meta[point]}`
-      }
+      result += `${str.slice(last, i)}${meta[point]}`
+      last = i + 1
+    } else if (point >= 55296 && point <= 57343) {
+      result += `${str.slice(last, i)}${`\\u${point.toString(16).padStart(4, '0')}`}`
       last = i + 1
     }
   }
-  if (last === 0) {
-    result = str
-  } else if (last !== i) {
-    result += str.slice(last)
-  }
+  result += str.slice(last)
   return result
 }
 
@@ -100,17 +100,17 @@ const typedArrayPrototypeGetSymbolToStringTag =
     Symbol.toStringTag
   ).get
 
-function isTypedArray (value) {
-  return typedArrayPrototypeGetSymbolToStringTag.call(value) !== undefined
+function isTypedArrayWithEntries (value) {
+  return typedArrayPrototypeGetSymbolToStringTag.call(value) !== undefined && value.length !== 0
 }
 
-function stringifyTypedArray (array, separator) {
-  if (array.length === 0) {
-    return ''
+function stringifyTypedArray (array, separator, maximumBreadth) {
+  if (array.length < maximumBreadth) {
+    maximumBreadth = array.length
   }
   const whitespace = separator === ',' ? '' : ' '
   let res = `"0":${whitespace}${array[0]}`
-  for (let i = 1; i < array.length; i++) {
+  for (let i = 1; i < maximumBreadth; i++) {
     res += `${separator}"${i}":${whitespace}${array[i]}`
   }
   return res
@@ -138,13 +138,49 @@ function getBooleanOption (options, key) {
   return value === undefined ? true : value
 }
 
-function main (options) {
+function getPositiveIntegerOption (options, key) {
+  if (options && Object.prototype.hasOwnProperty.call(options, key)) {
+    var value = options[key]
+    if (typeof value !== 'number') {
+      throw new TypeError(`The "${key}" argument must be of type number`)
+    }
+    if (!Number.isInteger(value)) {
+      throw new TypeError(`The "${key}" argument must be an integer`)
+    }
+    if (value < 1) {
+      throw new RangeError(`The "${key}" argument must be >= 1`)
+    }
+  }
+  return value === undefined ? Infinity : value
+}
+
+function getItemCount (number) {
+  if (number === 1) {
+    return '1 item'
+  }
+  return `${number} items`
+}
+
+function getUniqueReplacerSet (replacerArray) {
+  const replacerSet = new Set()
+  for (const value of replacerArray) {
+    if (typeof value === 'string') {
+      replacerSet.add(value)
+    } else if (typeof value === 'number') {
+      replacerSet.add(String(value))
+    }
+  }
+  return replacerSet
+}
+
+function configure (options) {
   const circularValue = getCircularValueOption(options)
   const bigint = getBooleanOption(options, 'bigint')
   const deterministic = getBooleanOption(options, 'deterministic')
+  const maximumDepth = getPositiveIntegerOption(options, 'maximumDepth')
+  const maximumBreadth = getPositiveIntegerOption(options, 'maximumBreadth')
 
-  // Full version: supports all options
-  function stringifyFullFn (key, parent, stack, replacer, spacer, indentation) {
+  function stringifyFnReplacer (key, parent, stack, replacer, spacer, indentation) {
     let value = parent[key]
 
     if (typeof value === 'object' && value !== null && typeof value.toJSON === 'function') {
@@ -171,20 +207,28 @@ function main (options) {
           if (value.length === 0) {
             return '[]'
           }
+          if (maximumDepth < stack.length + 1) {
+            return '"[Array]"'
+          }
           stack.push(value)
           if (spacer !== '') {
             indentation += spacer
             res += `\n${indentation}`
             join = `,\n${indentation}`
           }
+          const maximumValuesToStringify = Math.min(value.length, maximumBreadth)
           let i = 0
-          for (; i < value.length - 1; i++) {
-            const tmp = stringifyFullFn(i, value, stack, replacer, spacer, indentation)
+          for (; i < maximumValuesToStringify - 1; i++) {
+            const tmp = stringifyFnReplacer(i, value, stack, replacer, spacer, indentation)
             res += tmp !== undefined ? tmp : 'null'
             res += join
           }
-          const tmp = stringifyFullFn(i, value, stack, replacer, spacer, indentation)
+          const tmp = stringifyFnReplacer(i, value, stack, replacer, spacer, indentation)
           res += tmp !== undefined ? tmp : 'null'
+          if (value.length - 1 > maximumBreadth) {
+            const removedKeys = value.length - maximumBreadth - 1
+            res += `${join}"... ${getItemCount(removedKeys)} not stringified"`
+          }
           if (spacer !== '') {
             res += `\n${originalIndentation}`
           }
@@ -193,8 +237,12 @@ function main (options) {
         }
 
         let keys = Object.keys(value)
-        if (keys.length === 0) {
+        const keyLength = keys.length
+        if (keyLength === 0) {
           return '{}'
+        }
+        if (maximumDepth < stack.length + 1) {
+          return '"[Object]"'
         }
         let whitespace = ''
         let separator = ''
@@ -203,21 +251,29 @@ function main (options) {
           join = `,\n${indentation}`
           whitespace = ' '
         }
-        if (isTypedArray(value)) {
-          res += stringifyTypedArray(value, join)
+        let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
+        if (isTypedArrayWithEntries(value)) {
+          res += stringifyTypedArray(value, join, maximumBreadth)
           keys = keys.slice(value.length)
+          maximumPropertiesToStringify -= value.length
           separator = join
         }
         if (deterministic) {
           keys = insertSort(keys)
         }
         stack.push(value)
-        for (const key of keys) {
-          const tmp = stringifyFullFn(key, value, stack, replacer, spacer, indentation)
+        for (let i = 0; i < maximumPropertiesToStringify; i++) {
+          const key = keys[i]
+          const tmp = stringifyFnReplacer(key, value, stack, replacer, spacer, indentation)
           if (tmp !== undefined) {
             res += `${separator}"${strEscape(key)}":${whitespace}${tmp}`
             separator = join
           }
+        }
+        if (keyLength > maximumBreadth) {
+          const removedKeys = keyLength - maximumBreadth
+          res += `${separator}"...":${whitespace}"${getItemCount(removedKeys)} not stringified"`
+          separator = join
         }
         if (spacer !== '' && separator.length > 1) {
           res = `\n${indentation}${res}\n${originalIndentation}`
@@ -234,7 +290,7 @@ function main (options) {
     }
   }
 
-  function stringifyFullArr (key, value, stack, replacer, spacer, indentation) {
+  function stringifyArrayReplacer (key, value, stack, replacer, spacer, indentation) {
     if (typeof value === 'object' && value !== null && typeof value.toJSON === 'function') {
       value = value.toJSON(key)
     }
@@ -258,28 +314,35 @@ function main (options) {
           if (value.length === 0) {
             return '[]'
           }
+          if (maximumDepth < stack.length + 1) {
+            return '"[Array]"'
+          }
           stack.push(value)
           if (spacer !== '') {
             indentation += spacer
             res += `\n${indentation}`
             join = `,\n${indentation}`
           }
+          const maximumValuesToStringify = Math.min(value.length, maximumBreadth)
           let i = 0
-          for (; i < value.length - 1; i++) {
-            const tmp = stringifyFullArr(i, value[i], stack, replacer, spacer, indentation)
+          for (; i < maximumValuesToStringify - 1; i++) {
+            const tmp = stringifyArrayReplacer(i, value[i], stack, replacer, spacer, indentation)
             res += tmp !== undefined ? tmp : 'null'
             res += join
           }
-          const tmp = stringifyFullArr(i, value[i], stack, replacer, spacer, indentation)
+          const tmp = stringifyArrayReplacer(i, value[i], stack, replacer, spacer, indentation)
           res += tmp !== undefined ? tmp : 'null'
+          if (value.length - 1 > maximumBreadth) {
+            const removedKeys = value.length - maximumBreadth - 1
+            res += `${join}"... ${getItemCount(removedKeys)} not stringified"`
+          }
           if (spacer !== '') {
             res += `\n${originalIndentation}`
           }
           stack.pop()
           return `[${res}]`
         }
-
-        if (replacer.length === 0) {
+        if (replacer.size === 0) {
           return '{}'
         }
         stack.push(value)
@@ -291,12 +354,10 @@ function main (options) {
         }
         let separator = ''
         for (const key of replacer) {
-          if (typeof key === 'string' || typeof key === 'number') {
-            const tmp = stringifyFullArr(key, value[key], stack, replacer, spacer, indentation)
-            if (tmp !== undefined) {
-              res += `${separator}"${strEscape(key)}":${whitespace}${tmp}`
-              separator = join
-            }
+          const tmp = stringifyArrayReplacer(key, value[key], stack, replacer, spacer, indentation)
+          if (tmp !== undefined) {
+            res += `${separator}"${strEscape(key)}":${whitespace}${tmp}`
+            separator = join
           }
         }
         if (spacer !== '' && separator.length > 1) {
@@ -314,7 +375,6 @@ function main (options) {
     }
   }
 
-  // Supports only the spacer option
   function stringifyIndent (key, value, stack, spacer, indentation) {
     switch (typeof value) {
       case 'string':
@@ -342,46 +402,66 @@ function main (options) {
           if (value.length === 0) {
             return '[]'
           }
+          if (maximumDepth < stack.length + 1) {
+            return '"[Array]"'
+          }
           stack.push(value)
           indentation += spacer
           let res = `\n${indentation}`
           const join = `,\n${indentation}`
+          const maximumValuesToStringify = Math.min(value.length, maximumBreadth)
           let i = 0
-          for (; i < value.length - 1; i++) {
+          for (; i < maximumValuesToStringify - 1; i++) {
             const tmp = stringifyIndent(i, value[i], stack, spacer, indentation)
             res += tmp !== undefined ? tmp : 'null'
             res += join
           }
           const tmp = stringifyIndent(i, value[i], stack, spacer, indentation)
           res += tmp !== undefined ? tmp : 'null'
+          if (value.length - 1 > maximumBreadth) {
+            const removedKeys = value.length - maximumBreadth - 1
+            res += `${join}"... ${getItemCount(removedKeys)} not stringified"`
+          }
           res += `\n${originalIndentation}`
           stack.pop()
           return `[${res}]`
         }
 
         let keys = Object.keys(value)
-        if (keys.length === 0) {
+        const keyLength = keys.length
+        if (keyLength === 0) {
           return '{}'
+        }
+        if (maximumDepth < stack.length + 1) {
+          return '"[Object]"'
         }
         indentation += spacer
         const join = `,\n${indentation}`
         let res = ''
         let separator = ''
-        if (isTypedArray(value)) {
-          res += stringifyTypedArray(value, join)
+        let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
+        if (isTypedArrayWithEntries(value)) {
+          res += stringifyTypedArray(value, join, maximumBreadth)
           keys = keys.slice(value.length)
+          maximumPropertiesToStringify -= value.length
           separator = join
         }
         if (deterministic) {
           keys = insertSort(keys)
         }
         stack.push(value)
-        for (const key of keys) {
+        for (let i = 0; i < maximumPropertiesToStringify; i++) {
+          const key = keys[i]
           const tmp = stringifyIndent(key, value[key], stack, spacer, indentation)
           if (tmp !== undefined) {
             res += `${separator}"${strEscape(key)}": ${tmp}`
             separator = join
           }
+        }
+        if (keyLength > maximumBreadth) {
+          const removedKeys = keyLength - maximumBreadth
+          res += `${separator}"...": "${getItemCount(removedKeys)} not stringified"`
+          separator = join
         }
         if (separator !== '') {
           res = `\n${indentation}${res}\n${originalIndentation}`
@@ -398,7 +478,6 @@ function main (options) {
     }
   }
 
-  // Simple without any options
   function stringifySimple (key, value, stack) {
     switch (typeof value) {
       case 'string':
@@ -427,38 +506,58 @@ function main (options) {
           if (value.length === 0) {
             return '[]'
           }
+          if (maximumDepth < stack.length + 1) {
+            return '"[Array]"'
+          }
           stack.push(value)
+          const maximumValuesToStringify = Math.min(value.length, maximumBreadth)
           let i = 0
-          for (; i < value.length - 1; i++) {
+          for (; i < maximumValuesToStringify - 1; i++) {
             const tmp = stringifySimple(i, value[i], stack)
             res += tmp !== undefined ? tmp : 'null'
             res += ','
           }
           const tmp = stringifySimple(i, value[i], stack)
           res += tmp !== undefined ? tmp : 'null'
+          if (value.length - 1 > maximumBreadth) {
+            const removedKeys = value.length - maximumBreadth - 1
+            res += `,"... ${getItemCount(removedKeys)} not stringified"`
+          }
           stack.pop()
           return `[${res}]`
         }
 
         let keys = Object.keys(value)
-        if (keys.length === 0) {
+        const keyLength = keys.length
+        if (keyLength === 0) {
           return '{}'
         }
+        if (maximumDepth < stack.length + 1) {
+          return '"[Object]"'
+        }
         let separator = ''
-        if (isTypedArray(value)) {
-          res += stringifyTypedArray(value, ',')
+        let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
+        if (isTypedArrayWithEntries(value)) {
+          res += stringifyTypedArray(value, ',', maximumBreadth)
           keys = keys.slice(value.length)
+          maximumPropertiesToStringify -= value.length
+          separator = ','
         }
         if (deterministic) {
           keys = insertSort(keys)
         }
         stack.push(value)
-        for (const key of keys) {
+        for (let i = 0; i < maximumPropertiesToStringify; i++) {
+          const key = keys[i]
           const tmp = stringifySimple(key, value[key], stack)
           if (tmp !== undefined) {
             res += `${separator}"${strEscape(key)}":${tmp}`
             separator = ','
           }
+        }
+        if (keyLength > maximumBreadth) {
+          const removedKeys = keyLength - maximumBreadth
+          res += `${separator}"...":"${getItemCount(removedKeys)} not stringified"`
         }
         stack.pop()
         return `{${res}}`
@@ -482,13 +581,13 @@ function main (options) {
       }
       if (replacer != null) {
         if (typeof replacer === 'function') {
-          return stringifyFullFn('', { '': value }, [], replacer, spacer, '')
+          return stringifyFnReplacer('', { '': value }, [], replacer, spacer, '')
         }
         if (Array.isArray(replacer)) {
-          return stringifyFullArr('', value, [], replacer, spacer, '')
+          return stringifyArrayReplacer('', value, [], getUniqueReplacerSet(replacer), spacer, '')
         }
       }
-      if (spacer !== '') {
+      if (spacer.length !== 0) {
         return stringifyIndent('', value, [], spacer, '')
       }
     }
