@@ -18,9 +18,9 @@ exports.configure = configure
 module.exports = stringify
 
 // eslint-disable-next-line
-const strEscapeSequencesRegExp = /[\x00-\x1f\x22\x5c]/
+const strEscapeSequencesRegExp = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]/
 // eslint-disable-next-line
-const strEscapeSequencesReplacer = /[\x00-\x1f\x22\x5c]/g
+const strEscapeSequencesReplacer = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]/g
 
 // Escaped special characters. Use empty strings to fill up unused entries.
 const meta = [
@@ -40,10 +40,14 @@ const meta = [
 ]
 
 function escapeFn (str) {
-  return meta[str.charCodeAt(0)]
+  const charCode = str.charCodeAt(0)
+  return meta.length > charCode
+    ? meta[charCode]
+    : `\\u${charCode.toString(16).padStart(4, '0')}`
 }
 
-// Escape control characters, double quotes and the backslash.
+// Escape C0 control characters, double quotes, the backslash and every code
+// unit with a numeric value in the inclusive range 0xD800 to 0xDFFF.
 function strEscape (str) {
   // Some magic numbers that worked out fine while benchmarking with v8 8.0
   if (str.length < 5000 && !strEscapeSequencesRegExp.test(str)) {
@@ -54,23 +58,17 @@ function strEscape (str) {
   }
   let result = ''
   let last = 0
-  let i = 0
-  for (; i < str.length; i++) {
+  for (let i = 0; i < str.length; i++) {
     const point = str.charCodeAt(i)
     if (point === 34 || point === 92 || point < 32) {
-      if (last === i) {
-        result += meta[point]
-      } else {
-        result += `${str.slice(last, i)}${meta[point]}`
-      }
+      result += `${str.slice(last, i)}${meta[point]}`
+      last = i + 1
+    } else if (point >= 55296 && point <= 57343) {
+      result += `${str.slice(last, i)}${`\\u${point.toString(16).padStart(4, '0')}`}`
       last = i + 1
     }
   }
-  if (last === 0) {
-    result = str
-  } else if (last !== i) {
-    result += str.slice(last)
-  }
+  result += str.slice(last)
   return result
 }
 

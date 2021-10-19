@@ -995,3 +995,21 @@ test('should throw when maximumBreadth receives malformed input', (assert) => {
   })
   assert.end()
 })
+
+test('check for well formed stringify implementation', (assert) => {
+  for (let i = 0; i < 2 ** 16; i++) {
+    const string = String.fromCharCode(i)
+    const actual = stringify(string)
+    const expected = JSON.stringify(string)
+    // Older Node.js versions do not use the well formed JSON implementation.
+    if (Number(process.version.split('.')[0].slice(1)) >= 12 || i < 0xd800 || i > 0xdfff) {
+      assert.equal(actual, expected)
+    } else {
+      assert.not(actual, expected)
+    }
+  }
+  // Trigger special case
+  const longStringEscape = stringify(`${'a'.repeat(100)}\uD800`)
+  assert.equal(longStringEscape, `"${'a'.repeat(100)}\\ud800"`)
+  assert.end()
+})
