@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.2.0
+
+- Accept `undefined` as `circularValue` option to remove circular values from the serialized output
+
 ## v2.1.0
 
 - Added `maximumBreadth` option to limit stringification at a specific object or array "width" (number of properties / values)

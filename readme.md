@@ -44,7 +44,9 @@ stringify(circular, ['a', 'b'], 2)
 
 * `bigint` {boolean} If `true`, bigint values are converted to a number. Otherwise
   they are ignored. **Default:** `true`.
-* `circularValue` {string|null} Define the value for circular references. **Default:** `[Circular]`.
+* `circularValue` {string|null|undefined} Define the value for circular
+  references. Circular values are not serialized, if set to `undefined`.
+  **Default:** `[Circular]`.
 * `deterministic` {boolean} If `true`, guarantee a deterministic key order
   instead of relying on the insertion order. **Default:** `true`.
 * `maximumBreadth` {number} Maximum number of entries to serialize per object

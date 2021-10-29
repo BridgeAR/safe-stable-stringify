@@ -121,8 +121,10 @@ function getCircularValueOption (options) {
     var circularValue = options.circularValue
     if (typeof circularValue === 'string') {
       circularValue = `"${circularValue}"`
+    } else if (circularValue === undefined) {
+      return
     } else if (circularValue !== null) {
-      throw new TypeError('The "circularValue" argument must be of type string or the value null')
+      throw new TypeError('The "circularValue" argument must be of type string or the value null or undefined')
     }
   }
   return circularValue === undefined ? '"[Circular]"' : circularValue

@@ -542,7 +542,7 @@ test('no bigint without indentation', function (assert) {
   assert.end()
 })
 
-test('circular value option', function (assert) {
+test('circular value option should allow strings and null', function (assert) {
   let stringifyCircularValue = stringify.configure({ circularValue: 'YEAH!!!' })
 
   const obj = {}
@@ -551,14 +551,31 @@ test('circular value option', function (assert) {
   const expected = '{"circular":"YEAH!!!"}'
   const actual = stringifyCircularValue(obj)
   assert.equal(actual, expected)
-  assert.equal(actual, expected)
   assert.equal(stringify(obj), '{"circular":"[Circular]"}')
-
-  // @ts-expect-error
-  assert.throws(() => stringify.configure({ circularValue: { objects: 'are not allowed' } }), /circularValue/)
 
   stringifyCircularValue = stringify.configure({ circularValue: null })
   assert.equal(stringifyCircularValue(obj), '{"circular":null}')
+
+  assert.end()
+})
+
+test('circular value option should throw for invalid values', function (assert) {
+  // @ts-expect-error
+  assert.throws(() => stringify.configure({ circularValue: { objects: 'are not allowed' } }), /circularValue/)
+
+  assert.end()
+})
+
+test('circular value option set to undefined should skip serialization', function (assert) {
+  const stringifyCircularValue = stringify.configure({ circularValue: undefined })
+
+  const obj = { a: 1 }
+  obj.circular = obj
+  obj.b = [2, obj]
+
+  const expected = '{"a":1,"b":[2,null]}'
+  const actual = stringifyCircularValue(obj)
+  assert.equal(actual, expected)
 
   assert.end()
 })
