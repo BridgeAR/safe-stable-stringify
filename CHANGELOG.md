@@ -2,7 +2,18 @@
 
 ## v2.2.0
 
-- Accept `undefined` as `circularValue` option to remove circular values from the serialized output
+- Accept `undefined` as `circularValue` option to remove circular properties from the serialized output:
+
+```js
+import { configure } from 'safe-stable-stringify'
+
+const object = { array: [] }
+object.circular = object;
+object.array.push(object)
+
+configure({ circularValue: undefined })(object)
+// '{"array":[null]}'
+```
 
 ## v2.1.0
 

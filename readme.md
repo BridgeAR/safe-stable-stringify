@@ -44,9 +44,9 @@ stringify(circular, ['a', 'b'], 2)
 
 * `bigint` {boolean} If `true`, bigint values are converted to a number. Otherwise
   they are ignored. **Default:** `true`.
-* `circularValue` {string|null|undefined} Define the value for circular
-  references. Circular values are not serialized, if set to `undefined`.
-  **Default:** `[Circular]`.
+* `circularValue` {string|null|undefined} Defines the value for circular
+  references. Set to `undefined`, circular properties are not serialized (array
+  entries are replaced with `null`). **Default:** `[Circular]`.
 * `deterministic` {boolean} If `true`, guarantee a deterministic key order
   instead of relying on the insertion order. **Default:** `true`.
 * `maximumBreadth` {number} Maximum number of entries to serialize per object
@@ -93,10 +93,10 @@ console.log(stringified)
 
 ## Differences to JSON.stringify
 
-1. Replace circular structures with the string `[Circular]` (the value may be changed).
-1. Sorted keys instead of using the insertion order (it is possible to deactivate this).
-1. BigInt values are stringified as regular number instead of throwing a TypeError.
-1. Boxed primitives (e.g., `Number(5)`) are not unboxed and are handled as
+1. _Circular values_ are replaced with the string `[Circular]` (the value may be changed).
+1. _Object keys_ are sorted instead of using the insertion order (it is possible to deactivate this).
+1. _BigInt_ values are stringified as regular number instead of throwing a TypeError.
+1. _Boxed primitives_ (e.g., `Number(5)`) are not unboxed and are handled as
    regular object.
 
 Those are the only differences to `JSON.stringify()`. This is a side effect free
@@ -105,8 +105,8 @@ with `JSON.stringify()`.
 
 ## Performance / Benchmarks
 
-Currently this is by far the fastest known stable stringify implementation.
-This is especially important for big objects and TypedArrays.
+Currently this is by far the fastest known stable (deterministic) stringify
+implementation. This is especially important for big objects and TypedArrays.
 
 (Dell Precision 5540, i7-9850H CPU @ 2.60GHz, Node.js 16.11.1)
 
