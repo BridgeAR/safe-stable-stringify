@@ -2,6 +2,7 @@
 
 ## v2.2.0
 
+- Reduce module size by removing the test and benchmark files from the published package
 - Accept `undefined` as `circularValue` option to remove circular properties from the serialized output:
 
 ```js
