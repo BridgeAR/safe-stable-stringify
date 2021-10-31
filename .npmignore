@@ -1,0 +1,9 @@
+**/*
+!index.d.ts
+!index.js
+!LICENSE
+!package.json
+!esm/*
+!CHANGELOG.md
+!readme.md
+!tsconfig.json
