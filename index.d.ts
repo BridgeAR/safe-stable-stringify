@@ -3,7 +3,7 @@ export function stringify(value: any, replacer?: (number | string)[] | null, spa
 
 export interface StringifyOptions {
   bigint?: boolean,
-  circularValue?: string | null,
+  circularValue?: string | null | TypeErrorConstructor | ErrorConstructor,
   deterministic?: boolean,
   maximumBreadth?: number,
   maximumDepth?: number,
