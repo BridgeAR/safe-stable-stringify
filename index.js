@@ -18,9 +18,9 @@ exports.configure = configure
 module.exports = stringify
 
 // eslint-disable-next-line
-const strEscapeSequencesRegExp = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]/
+const strEscapeSequencesRegExp = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]|[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/
 // eslint-disable-next-line
-const strEscapeSequencesReplacer = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]/g
+const strEscapeSequencesReplacer = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]|[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/g
 
 // Escaped special characters. Use empty strings to fill up unused entries.
 const meta = [
@@ -43,7 +43,7 @@ function escapeFn (str) {
   const charCode = str.charCodeAt(0)
   return meta.length > charCode
     ? meta[charCode]
-    : `\\u${charCode.toString(16).padStart(4, '0')}`
+    : `\\u${charCode.toString(16)}`
 }
 
 // Escape C0 control characters, double quotes, the backslash and every code
@@ -63,8 +63,15 @@ function strEscape (str) {
     if (point === 34 || point === 92 || point < 32) {
       result += `${str.slice(last, i)}${meta[point]}`
       last = i + 1
-    } else if (point >= 55296 && point <= 57343) {
-      result += `${str.slice(last, i)}${`\\u${point.toString(16).padStart(4, '0')}`}`
+    } else if (point >= 0xd800 && point <= 0xdfff) {
+      if (point <= 0xdbff && i + 1 < str.length) {
+        const point = str.charCodeAt(i + 1)
+        if (point >= 0xdc00 && point <= 0xdfff) {
+          i++
+          continue
+        }
+      }
+      result += `${str.slice(last, i)}${`\\u${point.toString(16)}`}`
       last = i + 1
     }
   }
@@ -120,14 +127,21 @@ function getCircularValueOption (options) {
   if (options && Object.prototype.hasOwnProperty.call(options, 'circularValue')) {
     var circularValue = options.circularValue
     if (typeof circularValue === 'string') {
-      circularValue = `"${circularValue}"`
-    } else if (circularValue === undefined) {
-      return
-    } else if (circularValue !== null) {
-      throw new TypeError('The "circularValue" argument must be of type string or the value null or undefined')
+      return `"${circularValue}"`
     }
+    if (circularValue == null) {
+      return circularValue
+    }
+    if (circularValue === Error || circularValue === TypeError) {
+      return {
+        toString () {
+          throw new TypeError('Converting circular structure to JSON')
+        }
+      }
+    }
+    throw new TypeError('The "circularValue" argument must be of type string or the value null or undefined')
   }
-  return circularValue === undefined ? '"[Circular]"' : circularValue
+  return '"[Circular]"'
 }
 
 function getBooleanOption (options, key) {

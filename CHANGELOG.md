@@ -1,5 +1,23 @@
 # Changelog
 
+## v2.3.0
+
+- Accept the `Error` constructor as `circularValue` option to throw on circular references as the regular JSON.stringify would:
+
+```js
+import { configure } from 'safe-stable-stringify'
+
+const object = {}
+object.circular = object;
+
+const stringify = configure({ circularValue: TypeError })
+
+stringify(object)
+// TypeError: Converting circular structure to JSON
+```
+
+- Fixed escaping wrong surrogates. Only lone surrogates are now escaped.
+
 ## v2.2.0
 
 - Reduce module size by removing the test and benchmark files from the published package

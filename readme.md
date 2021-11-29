@@ -44,9 +44,10 @@ stringify(circular, ['a', 'b'], 2)
 
 * `bigint` {boolean} If `true`, bigint values are converted to a number. Otherwise
   they are ignored. **Default:** `true`.
-* `circularValue` {string|null|undefined} Defines the value for circular
-  references. Set to `undefined`, circular properties are not serialized (array
-  entries are replaced with `null`). **Default:** `[Circular]`.
+* `circularValue` {string|null|undefined|ErrorConstructor} Defines the value for
+  circular references. Set to `undefined`, circular properties are not
+  serialized (array entries are replaced with `null`). Set to `Error`, to throw
+  on circular references. **Default:** `[Circular]`.
 * `deterministic` {boolean} If `true`, guarantee a deterministic key order
   instead of relying on the insertion order. **Default:** `true`.
 * `maximumBreadth` {number} Maximum number of entries to serialize per object
@@ -89,6 +90,13 @@ console.log(stringified)
 //     "circular": "Magic circle!",
 //     "...": "2 items not stringified"
 // }
+
+const throwOnCircular = configure({
+  circularValue: Error
+})
+
+throwOnCircular(circular);
+// TypeError: Converting circular structure to JSON
 ```
 
 ## Differences to JSON.stringify

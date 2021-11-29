@@ -17,5 +17,6 @@
       "dom"
     ]
   },
+  "include": ["**/*.js", "**/*.ts"],
   "exclude": ["compare.js", "benchmark.js", "./coverage"]
 }

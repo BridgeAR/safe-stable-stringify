@@ -24,6 +24,24 @@ test('nested circular reference to root', function (assert) {
   assert.end()
 })
 
+test('throw if circularValue is set to TypeError', function (assert) {
+  const noCircularStringify = stringify.configure({ circularValue: TypeError })
+  const object = { number: 42, boolean: true, string: 'Yes!' }
+  object.circular = object
+
+  assert.throws(() => noCircularStringify(object), TypeError)
+  assert.end()
+})
+
+test('throw if circularValue is set to Error', function (assert) {
+  const noCircularStringify = stringify.configure({ circularValue: Error })
+  const object = { number: 42, boolean: true, string: 'Yes!' }
+  object.circular = object
+
+  assert.throws(() => noCircularStringify(object), TypeError)
+  assert.end()
+})
+
 test('child circular reference', function (assert) {
   const fixture = { name: 'Tywin Lannister', child: { name: 'Tyrion\n\t"Lannister'.repeat(20) } }
   fixture.child.dinklage = fixture.child
@@ -1013,7 +1031,7 @@ test('should throw when maximumBreadth receives malformed input', (assert) => {
   assert.end()
 })
 
-test('check for well formed stringify implementation', (assert) => {
+test('check that all single characters are identical to JSON.stringify', (assert) => {
   for (let i = 0; i < 2 ** 16; i++) {
     const string = String.fromCharCode(i)
     const actual = stringify(string)
@@ -1028,5 +1046,47 @@ test('check for well formed stringify implementation', (assert) => {
   // Trigger special case
   const longStringEscape = stringify(`${'a'.repeat(100)}\uD800`)
   assert.equal(longStringEscape, `"${'a'.repeat(100)}\\ud800"`)
+  assert.end()
+})
+
+test('check for lone surrogate pairs', (assert) => {
+  const edgeChar = String.fromCharCode(0xd799)
+
+  for (let charCode = 0xD800; charCode < 0xDFFF; charCode++) {
+    const surrogate = String.fromCharCode(charCode)
+
+    assert.equal(
+      stringify(surrogate),
+      `"\\u${charCode.toString(16)}"`
+    )
+    assert.equal(
+      stringify(`${'a'.repeat(200)}${surrogate}`),
+      `"${'a'.repeat(200)}\\u${charCode.toString(16)}"`
+    )
+    assert.equal(
+      stringify(`${surrogate}${'a'.repeat(200)}`),
+      `"\\u${charCode.toString(16)}${'a'.repeat(200)}"`
+    )
+    if (charCode < 0xdc00) {
+      const highSurrogate = surrogate
+      const lowSurrogate = String.fromCharCode(charCode + 1024)
+      assert.notOk(
+        stringify(
+          `${edgeChar}${highSurrogate}${lowSurrogate}${edgeChar}`
+        ).includes('\\u')
+      )
+      assert.equal(
+        (stringify(
+          `${highSurrogate}${highSurrogate}${lowSurrogate}`
+        ).match(/\\u/g) || []).length,
+        1
+      )
+    } else {
+      assert.equal(
+        stringify(`${edgeChar}${surrogate}${edgeChar}`),
+        `"${edgeChar}\\u${charCode.toString(16)}${edgeChar}"`
+      )
+    }
+  }
   assert.end()
 })
