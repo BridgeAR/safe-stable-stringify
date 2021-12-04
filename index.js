@@ -18,9 +18,9 @@ exports.configure = configure
 module.exports = stringify
 
 // eslint-disable-next-line
-const strEscapeSequencesRegExp = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]|[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/
+const strEscapeSequencesRegExp = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]|[\ud800-\udbff](?![\udc00-\udfff])|(?:[^\ud800-\udbff]|^)[\udc00-\udfff]/
 // eslint-disable-next-line
-const strEscapeSequencesReplacer = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]|[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/g
+const strEscapeSequencesReplacer = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]|[\ud800-\udbff](?![\udc00-\udfff])|(?:[^\ud800-\udbff]|^)[\udc00-\udfff]/g
 
 // Escaped special characters. Use empty strings to fill up unused entries.
 const meta = [
@@ -40,6 +40,10 @@ const meta = [
 ]
 
 function escapeFn (str) {
+  if (str.length === 2) {
+    const charCode = str.charCodeAt(1)
+    return `${str[0]}\\u${charCode.toString(16)}`
+  }
   const charCode = str.charCodeAt(0)
   return meta.length > charCode
     ? meta[charCode]

@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.3.1
+
+- Fix `invalid regexp group` error in browsers or environments that do not support the negative lookbehind regular expression assertion.
+
 ## v2.3.0
 
 - Accept the `Error` constructor as `circularValue` option to throw on circular references as the regular JSON.stringify would:
