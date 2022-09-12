@@ -547,6 +547,31 @@ function configure (options) {
           return `[${res}]`
         }
 
+        if (Symbol.iterator in value) {
+          if (maximumDepth < stack.length + 1) {
+            return '"[Iterable]"'
+          }
+          stack.push(value)
+          let i = 0
+          let seenFirst = false
+          let exceededBreadth = false
+          for (const value_i of value) {
+            seenFirst ? (res += ',') : (seenFirst = true)
+            const tmp = stringifySimple(i, value_i, stack)
+            res += tmp !== undefined ? tmp : 'null'
+            i++
+            if (i >= maximumBreadth) {
+              exceededBreadth = true
+              break
+            }
+          }
+          if (exceededBreadth) {
+            res += `,"... some not stringified"`
+          }
+          stack.pop()
+          return `[${res}]`
+        }
+
         let keys = Object.keys(value)
         const keyLength = keys.length
         if (keyLength === 0) {
