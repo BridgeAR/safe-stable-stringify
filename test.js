@@ -232,9 +232,9 @@ test('null property', function (assert) {
 })
 
 test('nested child circular reference in toJSON', function (assert) {
-  var circle = { some: 'data' }
+  const circle = { some: 'data' }
   circle.circle = circle
-  var a = {
+  const a = {
     b: {
       toJSON: function () {
         // @ts-expect-error
@@ -251,7 +251,7 @@ test('nested child circular reference in toJSON', function (assert) {
       }
     }
   }
-  var o = {
+  const o = {
     a,
     bar: a
   }
@@ -736,7 +736,6 @@ test('indent properly; regression test for issue #16', function (assert) {
     indentedJSONArrayEmpty
   )
   assert.equal(
-    // @ts-ignore
     stringify(o, (k, v) => v, 2),
     indentedJSONReplacer
   )
@@ -755,7 +754,6 @@ test('indent properly; regression test for issue #16', function (assert) {
     indentedJSON.replace(circularIdentifier, circularReplacement)
   )
   assert.equal(
-    // @ts-ignore
     stringify(o, (k, v) => v, 2),
     indentedJSONReplacer.replace(circularIdentifier, circularReplacement)
   )
