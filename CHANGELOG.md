@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.4.0
+
+- Added `strict` option to verify that the passed in objects are fully compatible with JSON without removing information. If not, an error is thrown.
+- Fixed TypeScript definition for ESM code bases
+
 ## v2.3.1
 
 - Fix `invalid regexp group` error in browsers or environments that do not support the negative lookbehind regular expression assertion.
