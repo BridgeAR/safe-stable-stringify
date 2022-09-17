@@ -1,10 +1,12 @@
 # safe-stable-stringify
 
-Safe, deterministic and fast serialization alternative to [JSON.stringify][]. Zero dependencies. ESM and CJS. 100% coverage.
+Safe, deterministic and fast serialization alternative to [JSON.stringify][].
+Zero dependencies. ESM and CJS. 100% coverage.
 
 Gracefully handles circular structures and bigint instead of throwing.
 
-Optional custom circular values and deterministic behavior.
+Optional custom circular values, deterministic behavior or strict JSON
+compatibility check.
 
 ## stringify(value[, replacer[, space]])
 
@@ -47,7 +49,7 @@ stringify(circular, ['a', 'b'], 2)
 * `circularValue` {string|null|undefined|ErrorConstructor} Defines the value for
   circular references. Set to `undefined`, circular properties are not
   serialized (array entries are replaced with `null`). Set to `Error`, to throw
-  on circular references. **Default:** `[Circular]`.
+  on circular references. **Default:** `'[Circular]'`.
 * `deterministic` {boolean} If `true`, guarantee a deterministic key order
   instead of relying on the insertion order. **Default:** `true`.
 * `maximumBreadth` {number} Maximum number of entries to serialize per object
@@ -58,6 +60,10 @@ stringify(circular, ['a', 'b'], 2)
 * `maximumDepth` {number} Maximum number of object nesting levels (at least 1)
   that will be serialized. Objects at the maximum level are serialized as
   `'[Object]'` and arrays as `'[Array]'`. **Default:** `Infinity`
+* `strict` {boolean} Instead of handling any JSON value gracefully, throw an
+  error in case it may not be represented as JSON (functions, NaN, ...).
+  Circular values and bigint values throw as well in case either option is not
+  explicitly defined. Sets and Maps are not detected! **Default:** `false`
 * Returns: {function} A stringify function with the options applied.
 
 ```js
@@ -101,9 +107,10 @@ throwOnCircular(circular);
 
 ## Differences to JSON.stringify
 
-1. _Circular values_ are replaced with the string `[Circular]` (the value may be changed).
-1. _Object keys_ are sorted instead of using the insertion order (it is possible to deactivate this).
-1. _BigInt_ values are stringified as regular number instead of throwing a TypeError.
+1. _Circular values_ are replaced with the string `[Circular]` (configurable).
+1. _Object keys_ are sorted instead of using the insertion order (configurable).
+1. _BigInt_ values are stringified as regular number instead of throwing a
+   TypeError (configurable).
 1. _Boxed primitives_ (e.g., `Number(5)`) are not unboxed and are handled as
    regular object.
 

@@ -7,6 +7,7 @@ export interface StringifyOptions {
   deterministic?: boolean,
   maximumBreadth?: number,
   maximumDepth?: number,
+  strict?: boolean,
 }
 
 export namespace stringify {

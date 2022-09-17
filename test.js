@@ -1090,3 +1090,181 @@ test('check for lone surrogate pairs', (assert) => {
   }
   assert.end()
 })
+
+test('strict option possibilities', (assert) => {
+  assert.throws(() => {
+    // @ts-expect-error
+    stringify.configure({ strict: 1 })
+  }, {
+    message: 'The "strict" argument must be of type boolean',
+    name: 'TypeError'
+  })
+
+  const serializer = stringify.configure({ strict: false })
+
+  serializer(NaN)
+
+  const strictWithoutBigInt = stringify.configure({ strict: true, bigint: true })
+  strictWithoutBigInt(5n)
+
+  assert.throws(() => {
+    strictWithoutBigInt(NaN)
+  }, {
+    message: 'Object can not safely be stringified. Received type number (NaN)'
+  })
+
+  const strictWithoutCircular = stringify.configure({ strict: true, circularValue: 'Circular' })
+  strictWithoutBigInt(5n)
+
+  const circular = {}
+  circular.circular = circular
+  strictWithoutCircular(circular)
+
+  assert.end()
+})
+
+test('strict option simple', (assert) => {
+  const strictSerializer = stringify.configure({ strict: true })
+
+  assert.throws(() => {
+    strictSerializer({ a: NaN })
+  }, {
+    message: 'Object can not safely be stringified. Received type number (NaN)',
+    name: 'Error'
+  })
+
+  assert.throws(() => {
+    strictSerializer({ a: 5n })
+  }, {
+    message: 'Object can not safely be stringified. Received type bigint (5)',
+    name: 'Error'
+  })
+
+  assert.throws(() => {
+    strictSerializer({ a () {} })
+  }, {
+    message: 'Object can not safely be stringified. Received type function',
+    name: 'Error'
+  })
+
+  assert.throws(() => {
+    const circular = {}
+    circular.circular = circular
+    strictSerializer(circular)
+  }, {
+    message: 'Converting circular structure to JSON',
+    name: 'TypeError'
+  })
+
+  assert.end()
+})
+
+test('strict option indentation', (assert) => {
+  const strictSerializer = stringify.configure({ strict: true })
+
+  assert.throws(() => {
+    strictSerializer({ a: -Infinity }, null, 2)
+  }, {
+    message: 'Object can not safely be stringified. Received type number (-Infinity)',
+    name: 'Error'
+  })
+
+  assert.throws(() => {
+    strictSerializer({ a: 5n }, null, 2)
+  }, {
+    message: 'Object can not safely be stringified. Received type bigint (5)',
+    name: 'Error'
+  })
+
+  assert.throws(() => {
+    strictSerializer({ a () {} }, null, 2)
+  }, {
+    message: 'Object can not safely be stringified. Received type function',
+    name: 'Error'
+  })
+
+  assert.throws(() => {
+    const circular = {}
+    circular.circular = circular
+    strictSerializer(circular, null, 2)
+  }, {
+    message: 'Converting circular structure to JSON',
+    name: 'TypeError'
+  })
+
+  assert.end()
+})
+
+test('strict option replacer function', (assert) => {
+  const strictSerializer = stringify.configure({ strict: true })
+
+  assert.throws(() => {
+    strictSerializer(Symbol('test'), (_key_, value) => value)
+  }, {
+    message: 'Object can not safely be stringified. Received type symbol (Symbol(test))'
+  })
+
+  assert.throws(() => {
+    strictSerializer(5n, (_key_, value) => value)
+  }, {
+    message: 'Object can not safely be stringified. Received type bigint (5)'
+  })
+
+  assert.throws(() => {
+    strictSerializer(NaN, (_key_, value) => value)
+  }, {
+    message: 'Object can not safely be stringified. Received type number (NaN)'
+  })
+
+  assert.throws(() => {
+    const circular = {}
+    circular.circular = circular
+    strictSerializer(circular, (_key_, value) => value)
+  }, {
+    message: 'Converting circular structure to JSON',
+    name: 'TypeError'
+  })
+
+  assert.end()
+})
+
+test('strict option replacer array', (assert) => {
+  assert.throws(() => {
+    // @ts-expect-error
+    stringify.configure({ strict: 1 })
+  }, {
+    message: 'The "strict" argument must be of type boolean',
+    name: 'Error'
+  })
+
+  const strictSerializer = stringify.configure({ strict: true })
+
+  assert.throws(() => {
+    strictSerializer({ a () {} }, ['a'])
+  }, {
+    message: 'Object can not safely be stringified. Received type function'
+  })
+
+  assert.throws(() => {
+    strictSerializer({ a: 5n }, ['a'])
+  }, {
+    message: 'Object can not safely be stringified. Received type bigint (5)'
+  })
+
+  assert.throws(() => {
+    strictSerializer({ a: Infinity }, ['a'])
+  }, {
+    message: 'Object can not safely be stringified. Received type number (Infinity)'
+  })
+
+  assert.throws(() => {
+    const circular = {}
+    circular.circular = circular
+    strictSerializer(circular, ['circular'])
+  }, {
+    message: 'Converting circular structure to JSON',
+    name: 'TypeError'
+  })
+
+  assert.end()
+})

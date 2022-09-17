@@ -1,5 +1,7 @@
 'use strict'
 
+const { hasOwnProperty } = Object.prototype
+
 const stringify = configure()
 
 // @ts-expect-error
@@ -20,7 +22,7 @@ module.exports = stringify
 // eslint-disable-next-line
 const strEscapeSequencesRegExp = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]|[\ud800-\udbff](?![\udc00-\udfff])|(?:[^\ud800-\udbff]|^)[\udc00-\udfff]/
 // eslint-disable-next-line
-const strEscapeSequencesReplacer = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]|[\ud800-\udbff](?![\udc00-\udfff])|(?:[^\ud800-\udbff]|^)[\udc00-\udfff]/g
+const strEscapeSequencesReplacer = new RegExp(strEscapeSequencesRegExp, 'g')
 
 // Escaped special characters. Use empty strings to fill up unused entries.
 const meta = [
@@ -69,13 +71,13 @@ function strEscape (str) {
       last = i + 1
     } else if (point >= 0xd800 && point <= 0xdfff) {
       if (point <= 0xdbff && i + 1 < str.length) {
-        const point = str.charCodeAt(i + 1)
-        if (point >= 0xdc00 && point <= 0xdfff) {
+        const nextPoint = str.charCodeAt(i + 1)
+        if (nextPoint >= 0xdc00 && nextPoint <= 0xdfff) {
           i++
           continue
         }
       }
-      result += `${str.slice(last, i)}${`\\u${point.toString(16)}`}`
+      result += `${str.slice(last, i)}\\u${point.toString(16)}`
       last = i + 1
     }
   }
@@ -105,7 +107,7 @@ const typedArrayPrototypeGetSymbolToStringTag =
   Object.getOwnPropertyDescriptor(
     Object.getPrototypeOf(
       Object.getPrototypeOf(
-        new Uint8Array()
+        new Int8Array()
       )
     ),
     Symbol.toStringTag
@@ -128,8 +130,8 @@ function stringifyTypedArray (array, separator, maximumBreadth) {
 }
 
 function getCircularValueOption (options) {
-  if (options && Object.prototype.hasOwnProperty.call(options, 'circularValue')) {
-    var circularValue = options.circularValue
+  if (options && hasOwnProperty.call(options, 'circularValue')) {
+    const circularValue = options.circularValue
     if (typeof circularValue === 'string') {
       return `"${circularValue}"`
     }
@@ -149,8 +151,9 @@ function getCircularValueOption (options) {
 }
 
 function getBooleanOption (options, key) {
-  if (options && Object.prototype.hasOwnProperty.call(options, key)) {
-    var value = options[key]
+  let value
+  if (options && hasOwnProperty.call(options, key)) {
+    value = options[key]
     if (typeof value !== 'boolean') {
       throw new TypeError(`The "${key}" argument must be of type boolean`)
     }
@@ -159,8 +162,9 @@ function getBooleanOption (options, key) {
 }
 
 function getPositiveIntegerOption (options, key) {
-  if (options && Object.prototype.hasOwnProperty.call(options, key)) {
-    var value = options[key]
+  let value
+  if (options && hasOwnProperty.call(options, key)) {
+    value = options[key]
     if (typeof value !== 'number') {
       throw new TypeError(`The "${key}" argument must be of type number`)
     }
@@ -184,16 +188,40 @@ function getItemCount (number) {
 function getUniqueReplacerSet (replacerArray) {
   const replacerSet = new Set()
   for (const value of replacerArray) {
-    if (typeof value === 'string') {
-      replacerSet.add(value)
-    } else if (typeof value === 'number') {
+    if (typeof value === 'string' || typeof value === 'number') {
       replacerSet.add(String(value))
     }
   }
   return replacerSet
 }
 
+function getStrictOption (options) {
+  if (options && hasOwnProperty.call(options, 'strict')) {
+    const value = options.strict
+    if (typeof value !== 'boolean') {
+      throw new TypeError('The "strict" argument must be of type boolean')
+    }
+    if (value) {
+      return (value) => {
+        let message = `Object can not safely be stringified. Received type ${typeof value}`
+        if (typeof value !== 'function') message += ` (${value.toString()})`
+        throw new Error(message)
+      }
+    }
+  }
+}
+
 function configure (options) {
+  options = { ...options }
+  const fail = getStrictOption(options)
+  if (fail) {
+    if (options.bigint === undefined) {
+      options.bigint = false
+    }
+    if (!('circularValue' in options)) {
+      options.circularValue = Error
+    }
+  }
   const circularValue = getCircularValueOption(options)
   const bigint = getBooleanOption(options, 'bigint')
   const deterministic = getBooleanOption(options, 'deterministic')
@@ -302,11 +330,18 @@ function configure (options) {
         return `{${res}}`
       }
       case 'number':
-        return isFinite(value) ? String(value) : 'null'
+        return isFinite(value) ? String(value) : fail ? fail(value) : 'null'
       case 'boolean':
         return value === true ? 'true' : 'false'
+      case 'undefined':
+        return undefined
       case 'bigint':
-        return bigint ? String(value) : undefined
+        if (bigint) {
+          return String(value)
+        }
+        // fallthrough
+      default:
+        return fail ? fail(value) : undefined
     }
   }
 
@@ -387,11 +422,18 @@ function configure (options) {
         return `{${res}}`
       }
       case 'number':
-        return isFinite(value) ? String(value) : 'null'
+        return isFinite(value) ? String(value) : fail ? fail(value) : 'null'
       case 'boolean':
         return value === true ? 'true' : 'false'
+      case 'undefined':
+        return undefined
       case 'bigint':
-        return bigint ? String(value) : undefined
+        if (bigint) {
+          return String(value)
+        }
+        // fallthrough
+      default:
+        return fail ? fail(value) : undefined
     }
   }
 
@@ -490,11 +532,18 @@ function configure (options) {
         return `{${res}}`
       }
       case 'number':
-        return isFinite(value) ? String(value) : 'null'
+        return isFinite(value) ? String(value) : fail ? fail(value) : 'null'
       case 'boolean':
         return value === true ? 'true' : 'false'
+      case 'undefined':
+        return undefined
       case 'bigint':
-        return bigint ? String(value) : undefined
+        if (bigint) {
+          return String(value)
+        }
+        // fallthrough
+      default:
+        return fail ? fail(value) : undefined
     }
   }
 
@@ -583,11 +632,18 @@ function configure (options) {
         return `{${res}}`
       }
       case 'number':
-        return isFinite(value) ? String(value) : 'null'
+        return isFinite(value) ? String(value) : fail ? fail(value) : 'null'
       case 'boolean':
         return value === true ? 'true' : 'false'
+      case 'undefined':
+        return undefined
       case 'bigint':
-        return bigint ? String(value) : undefined
+        if (bigint) {
+          return String(value)
+        }
+        // fallthrough
+      default:
+        return fail ? fail(value) : undefined
     }
   }
 
