@@ -19,9 +19,8 @@ exports.configure = configure
 
 module.exports = stringify
 
-// eslint-disable-next-line
+// eslint-disable-next-line no-control-regex
 const strEscapeSequencesRegExp = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]|[\ud800-\udbff](?![\udc00-\udfff])|(?:[^\ud800-\udbff]|^)[\udc00-\udfff]/
-// eslint-disable-next-line
 const strEscapeSequencesReplacer = new RegExp(strEscapeSequencesRegExp, 'g')
 
 // Escaped special characters. Use empty strings to fill up unused entries.
@@ -130,7 +129,7 @@ function stringifyTypedArray (array, separator, maximumBreadth) {
 }
 
 function getCircularValueOption (options) {
-  if (options && hasOwnProperty.call(options, 'circularValue')) {
+  if (hasOwnProperty.call(options, 'circularValue')) {
     const circularValue = options.circularValue
     if (typeof circularValue === 'string') {
       return `"${circularValue}"`
@@ -152,7 +151,7 @@ function getCircularValueOption (options) {
 
 function getBooleanOption (options, key) {
   let value
-  if (options && hasOwnProperty.call(options, key)) {
+  if (hasOwnProperty.call(options, key)) {
     value = options[key]
     if (typeof value !== 'boolean') {
       throw new TypeError(`The "${key}" argument must be of type boolean`)
@@ -163,7 +162,7 @@ function getBooleanOption (options, key) {
 
 function getPositiveIntegerOption (options, key) {
   let value
-  if (options && hasOwnProperty.call(options, key)) {
+  if (hasOwnProperty.call(options, key)) {
     value = options[key]
     if (typeof value !== 'number') {
       throw new TypeError(`The "${key}" argument must be of type number`)
@@ -196,7 +195,7 @@ function getUniqueReplacerSet (replacerArray) {
 }
 
 function getStrictOption (options) {
-  if (options && hasOwnProperty.call(options, 'strict')) {
+  if (hasOwnProperty.call(options, 'strict')) {
     const value = options.strict
     if (typeof value !== 'boolean') {
       throw new TypeError('The "strict" argument must be of type boolean')

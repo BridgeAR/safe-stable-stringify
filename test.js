@@ -346,13 +346,17 @@ test('replacer removing all elements and indentation', function (assert) {
 test('array replacer', function (assert) {
   const replacer = ['f', 1, null]
   const obj = { f: null, null: true, 1: false }
-  // The null element will be removed!
+  // The null element will be ignored!
+  // @ts-expect-error
   const expected = JSON.stringify(obj, replacer)
+  // @ts-expect-error
   let actual = stringify(obj, replacer)
   assert.equal(actual, expected)
 
+  // @ts-expect-error
   obj.f = obj
 
+  // @ts-expect-error
   actual = stringify({ toJSON () { return obj } }, replacer)
   assert.equal(actual, expected.replace('null', '"[Circular]"'))
 
@@ -374,7 +378,9 @@ test('array replacer and indentation', function (assert) {
   const replacer = ['f', 1, null]
   const obj = { f: null, null: true, 1: [false, -Infinity, 't'] }
   // The null element will be removed!
+  // @ts-expect-error
   const expected = JSON.stringify(obj, replacer, 2)
+  // @ts-expect-error
   const actual = stringify(obj, replacer, 2)
   assert.equal(actual, expected)
   assert.end()
@@ -484,16 +490,16 @@ test('object with undefined values', function (assert) {
 })
 
 test('undefined values and indented', function (assert) {
-  let obj = { a: 1, c: undefined, b: 'hello' }
+  const obj1 = { a: 1, c: undefined, b: 'hello' }
 
-  let expected = JSON.stringify(obj, null, 2)
-  let actual = stringify(obj, null, 2)
+  let expected = JSON.stringify(obj1, null, 2)
+  let actual = stringify(obj1, null, 2)
   assert.equal(actual, expected)
 
-  obj = { b: 'hello', a: undefined, c: 1 }
+  const obj2 = { b: 'hello', a: undefined, c: 1 }
 
-  expected = JSON.stringify(obj)
-  actual = stringify(obj)
+  expected = JSON.stringify(obj2)
+  actual = stringify(obj2)
   assert.equal(actual, expected)
 
   assert.end()
@@ -516,6 +522,7 @@ test('bigint option', function (assert) {
   assert.equal(actualBigInt, expectedBigInt)
   assert.equal(actualDefault, expectedBigInt)
 
+  // @ts-expect-error
   assert.throws(() => stringify.configure({ bigint: null }), /bigint/)
 
   assert.end()
@@ -620,11 +627,11 @@ test('non-deterministic with replacer', function (assert) {
   const keys = Object.keys(obj)
 
   const expected = stringify(obj, ['b', 'c', 'd', 'e'])
-  let actual = stringifyNonDeterministic(obj, keys)
-  assert.equal(actual, expected)
+  const actualA = stringifyNonDeterministic(obj, keys)
+  assert.equal(actualA, expected)
 
-  actual = stringifyNonDeterministic(obj, (k, v) => v)
-  assert.equal(actual, expected)
+  const actualB = stringifyNonDeterministic(obj, (k, v) => v)
+  assert.equal(actualB, expected)
 
   assert.end()
 })
@@ -654,20 +661,20 @@ test('check small typed arrays with extra properties', function (assert) {
   // @ts-expect-error
   obj.foo = true
   let expected = JSON.stringify(obj)
-  let actual = stringify(obj)
-  assert.equal(actual, expected)
+  const actualA = stringify(obj)
+  assert.equal(actualA, expected)
 
   expected = JSON.stringify(obj, null, 2)
-  actual = stringify(obj, null, 2)
-  assert.equal(actual, expected)
+  const actualB = stringify(obj, null, 2)
+  assert.equal(actualB, expected)
 
   expected = JSON.stringify(obj, ['foo'])
-  actual = stringify(obj, ['foo'])
-  assert.equal(actual, expected)
+  const actualC = stringify(obj, ['foo'])
+  assert.equal(actualC, expected)
 
   expected = JSON.stringify(obj, (a, b) => b)
-  actual = stringify(obj, (a, b) => b)
-  assert.equal(actual, expected)
+  const actualD = stringify(obj, (a, b) => b)
+  assert.equal(actualD, expected)
 
   assert.end()
 })
@@ -972,26 +979,26 @@ test('show skipped keys even non were serliazable', (assert) => {
 
   const input = { a: Symbol('ignored'), b: Symbol('ignored') }
 
-  let actual = serialize(input)
+  const actual1 = serialize(input)
   let expected = '{"...":"1 item not stringified"}'
-  assert.equal(actual, expected)
+  assert.equal(actual1, expected)
 
-  actual = serialize(input, (a, b) => b)
-  assert.equal(actual, expected)
+  const actual2 = serialize(input, (a, b) => b)
+  assert.equal(actual2, expected)
 
-  actual = serialize(input, null, 1)
+  const actual3 = serialize(input, null, 1)
   expected = '{\n "...": "1 item not stringified"\n}'
-  assert.equal(actual, expected)
+  assert.equal(actual3, expected)
 
-  actual = serialize(input, (a, b) => b, 1)
-  assert.equal(actual, expected)
+  const actual4 = serialize(input, (a, b) => b, 1)
+  assert.equal(actual4, expected)
 
-  actual = serialize(input, ['a'])
+  const actual5 = serialize(input, ['a'])
   expected = '{}'
-  assert.equal(actual, expected)
+  assert.equal(actual5, expected)
 
-  actual = serialize(input, ['a', 'b', 'c'])
-  assert.equal(actual, expected)
+  const actual6 = serialize(input, ['a', 'b', 'c'])
+  assert.equal(actual6, expected)
 
   assert.end()
 })
