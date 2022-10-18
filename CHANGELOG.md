@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.4.1
+
+- More precise TypeScript types. The return type is now either `string`, `undefined` or `string | undefined` depending on the input.
+
 ## v2.4.0
 
 - Added `strict` option to verify that the passed in objects are fully compatible with JSON without removing information. If not, an error is thrown.

@@ -12,6 +12,8 @@
     "importHelpers": false,
     "target": "esnext",
     "module": "CommonJS",
+    "strict": true,
+    "noImplicitAny": false,
     "lib": [
       "esnext",
       "dom"
