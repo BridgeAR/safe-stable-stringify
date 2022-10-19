@@ -396,9 +396,6 @@ function configure (options) {
           stack.pop()
           return `[${res}]`
         }
-        if (replacer.size === 0) {
-          return '{}'
-        }
         stack.push(value)
         let whitespace = ''
         if (spacer !== '') {
