@@ -1,4 +1,4 @@
-export type Replacer =  (number | string)[] | null | undefined | ((key: string, value: unknown) => string | number | boolean | null)
+export type Replacer = (number | string)[] | null | undefined | ((key: string, value: unknown) => string | number | boolean | null | object)
 
 export function stringify(value: undefined | symbol | ((...args: unknown[]) => unknown), replacer?: Replacer, space?: string | number): undefined
 export function stringify(value: string | number | unknown[] | null | boolean | object, replacer?: Replacer, space?: string | number): string

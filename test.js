@@ -279,7 +279,8 @@ test('invalid replacer being ignored', function (assert) {
 
   // @ts-expect-error
   const actual = stringify(obj, 'invalidReplacer')
-  const expected = stringify(obj)
+  // @ts-expect-error
+  const expected = stringify(obj, 'invalidReplacer')
   assert.equal(actual, expected)
 
   assert.end()

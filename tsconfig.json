@@ -8,7 +8,7 @@
     "noEmit": true,
     "downlevelIteration": false,
     "experimentalDecorators": false,
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "importHelpers": false,
     "target": "esnext",
     "module": "CommonJS",

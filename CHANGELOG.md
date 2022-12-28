@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.4.2
+
+- Improved ESM TypeScript types.
+- More precise TypeScript replacer type.
+
 ## v2.4.1
 
 - More precise TypeScript types. The return type is now either `string`, `undefined` or `string | undefined` depending on the input.
