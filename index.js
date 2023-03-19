@@ -246,14 +246,8 @@ function configure (options) {
           join = `,\n${indentation}`
           whitespace = ' '
         }
-        let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
-        if (isTypedArrayWithEntries(value)) {
-          res += stringifyTypedArray(value, join, maximumBreadth)
-          keys = keys.slice(value.length)
-          maximumPropertiesToStringify -= value.length
-          separator = join
-        }
-        if (deterministic) {
+        const maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
+        if (deterministic && !isTypedArrayWithEntries(value)) {
           keys = insertSort(keys)
         }
         stack.push(value)

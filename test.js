@@ -288,12 +288,22 @@ test('invalid replacer being ignored', function (assert) {
 
 test('replacer removing elements', function (assert) {
   const replacer = function (k, v) {
+    assert.type(k, 'string')
     if (k === 'remove') return
+    if (k === '0') typedkeysInReplacer = true
     return v
   }
   const obj = { f: null, remove: true, typed: new Int32Array(1) }
+
+  let typedkeysInReplacer = false
   const expected = JSON.stringify(obj, replacer)
+  assert.ok(typedkeysInReplacer)
+  typedkeysInReplacer = false
+
   let actual = stringify(obj, replacer)
+  assert.ok(typedkeysInReplacer)
+  typedkeysInReplacer = false
+
   assert.equal(actual, expected)
 
   obj.obj = obj
