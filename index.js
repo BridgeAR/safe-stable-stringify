@@ -266,11 +266,11 @@ function configure (options) {
           const maximumValuesToStringify = Math.min(value.length, maximumBreadth)
           let i = 0
           for (; i < maximumValuesToStringify - 1; i++) {
-            const tmp = stringifyFnReplacer(i, value, stack, replacer, spacer, indentation)
+            const tmp = stringifyFnReplacer(String(i), value, stack, replacer, spacer, indentation)
             res += tmp !== undefined ? tmp : 'null'
             res += join
           }
-          const tmp = stringifyFnReplacer(i, value, stack, replacer, spacer, indentation)
+          const tmp = stringifyFnReplacer(String(i), value, stack, replacer, spacer, indentation)
           res += tmp !== undefined ? tmp : 'null'
           if (value.length - 1 > maximumBreadth) {
             const removedKeys = value.length - maximumBreadth - 1

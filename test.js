@@ -317,6 +317,7 @@ test('replacer removing elements and indentation', function (assert) {
 
 test('replacer removing all elements', function (assert) {
   const replacer = function (k, v) {
+    assert.type(k, 'string')
     if (k !== '') return
     return k
   }

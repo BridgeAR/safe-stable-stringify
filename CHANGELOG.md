@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.4.3
+
+- Fixed replacer function receiving array keys as number instead of string
+
 ## v2.4.2
 
 - Improved ESM TypeScript types.
