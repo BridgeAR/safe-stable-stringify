@@ -2,6 +2,32 @@ const { test } = require('tap')
 const { stringify } = require('./index.js')
 const clone = require('clone')
 
+test('toJSON receives array keys as string', function (assert) {
+  const object = [{
+    toJSON (key) {
+      assert.equal(key, '0')
+      return 42
+    }
+  }]
+
+  const expected = JSON.stringify(object)
+
+  let actual = stringify(object)
+  assert.equal(actual, expected)
+
+  actual = stringify(object, ['0'])
+  assert.equal(actual, expected)
+
+  // @ts-expect-error
+  actual = stringify(object, (key, value) => value)
+  assert.equal(actual, expected)
+
+  actual = stringify(object, null, 2)
+  assert.equal(actual, '[\n  42\n]')
+
+  assert.end()
+})
+
 test('circular reference to root', function (assert) {
   const fixture = { name: 'Tywin Lannister' }
   fixture.circle = fixture

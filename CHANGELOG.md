@@ -2,6 +2,7 @@
 
 ## v2.4.3
 
+- Fixed toJSON function receiving array keys as number instead of string
 - Fixed replacer function receiving array keys as number instead of string
 - Fixed replacer function not being called for TypedArray entries
 - Improved performance to escape long strings that contain characters that need escaping

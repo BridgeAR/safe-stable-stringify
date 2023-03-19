@@ -322,11 +322,11 @@ function configure (options) {
           const maximumValuesToStringify = Math.min(value.length, maximumBreadth)
           let i = 0
           for (; i < maximumValuesToStringify - 1; i++) {
-            const tmp = stringifyArrayReplacer(i, value[i], stack, replacer, spacer, indentation)
+            const tmp = stringifyArrayReplacer(String(i), value[i], stack, replacer, spacer, indentation)
             res += tmp !== undefined ? tmp : 'null'
             res += join
           }
-          const tmp = stringifyArrayReplacer(i, value[i], stack, replacer, spacer, indentation)
+          const tmp = stringifyArrayReplacer(String(i), value[i], stack, replacer, spacer, indentation)
           res += tmp !== undefined ? tmp : 'null'
           if (value.length - 1 > maximumBreadth) {
             const removedKeys = value.length - maximumBreadth - 1
@@ -412,11 +412,11 @@ function configure (options) {
           const maximumValuesToStringify = Math.min(value.length, maximumBreadth)
           let i = 0
           for (; i < maximumValuesToStringify - 1; i++) {
-            const tmp = stringifyIndent(i, value[i], stack, spacer, indentation)
+            const tmp = stringifyIndent(String(i), value[i], stack, spacer, indentation)
             res += tmp !== undefined ? tmp : 'null'
             res += join
           }
-          const tmp = stringifyIndent(i, value[i], stack, spacer, indentation)
+          const tmp = stringifyIndent(String(i), value[i], stack, spacer, indentation)
           res += tmp !== undefined ? tmp : 'null'
           if (value.length - 1 > maximumBreadth) {
             const removedKeys = value.length - maximumBreadth - 1
@@ -520,11 +520,11 @@ function configure (options) {
           const maximumValuesToStringify = Math.min(value.length, maximumBreadth)
           let i = 0
           for (; i < maximumValuesToStringify - 1; i++) {
-            const tmp = stringifySimple(i, value[i], stack)
+            const tmp = stringifySimple(String(i), value[i], stack)
             res += tmp !== undefined ? tmp : 'null'
             res += ','
           }
-          const tmp = stringifySimple(i, value[i], stack)
+          const tmp = stringifySimple(String(i), value[i], stack)
           res += tmp !== undefined ? tmp : 'null'
           if (value.length - 1 > maximumBreadth) {
             const removedKeys = value.length - maximumBreadth - 1
