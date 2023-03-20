@@ -1079,20 +1079,12 @@ test('check that all single characters are identical to JSON.stringify', (assert
     const string = String.fromCharCode(i)
     const actual = stringify(string)
     const expected = JSON.stringify(string)
-    // Older Node.js versions do not use the well formed JSON implementation.
-    if (Number(process.version.split('.')[0].slice(1)) >= 12 || i < 0xd800 || i > 0xdfff) {
-      assert.equal(actual, expected)
-    } else {
-      assert.not(actual, expected)
-    }
+    assert.equal(actual, expected)
   }
-  // Trigger special case
-  const longStringEscape = stringify(`${'a'.repeat(100)}\uD800`)
-  assert.equal(longStringEscape, `"${'a'.repeat(100)}\\ud800"`)
   assert.end()
 })
 
-test('check for lone surrogate pairs', (assert) => {
+test('check for lone surrogate pairs', { skip: Number(process.version.slice(1, 3)) <= 11 }, (assert) => {
   const edgeChar = String.fromCharCode(0xd799)
 
   for (let charCode = 0xD800; charCode < 0xDFFF; charCode++) {
