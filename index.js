@@ -20,7 +20,7 @@ exports.configure = configure
 module.exports = stringify
 
 // eslint-disable-next-line no-control-regex
-const strEscapeSequencesRegExp = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]|[\ud800-\udbff](?![\udc00-\udfff])|(?:[^\ud800-\udbff]|^)[\udc00-\udfff]/
+const strEscapeSequencesRegExp = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]/
 
 // Escape C0 control characters, double quotes, the backslash and every code
 // unit with a numeric value in the inclusive range 0xD800 to 0xDFFF.
