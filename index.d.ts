@@ -7,7 +7,7 @@ export function stringify(value: unknown, replacer?: ((key: string, value: unkno
 export interface StringifyOptions {
   bigint?: boolean,
   circularValue?: string | null | TypeErrorConstructor | ErrorConstructor,
-  deterministic?: boolean,
+  deterministic?: boolean | ((a: string, b: string) => number),
   maximumBreadth?: number,
   maximumDepth?: number,
   strict?: boolean,
