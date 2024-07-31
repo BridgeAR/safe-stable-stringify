@@ -41,7 +41,7 @@ function insertSort (array, comparator) {
   for (let i = 1; i < array.length; i++) {
     const currentValue = array[i]
     let position = i
-    while (position !== 0 && comparator(array[position - 1], currentValue) > 0) {
+    while (position !== 0 && array[position - 1] > currentValue) {
       array[position] = array[position - 1]
       position--
     }
