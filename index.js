@@ -192,18 +192,6 @@ function configure (options) {
   const comparator = typeof deterministic === "function" ? deterministic : undefined
   const maximumDepth = getPositiveIntegerOption(options, 'maximumDepth')
   const maximumBreadth = getPositiveIntegerOption(options, 'maximumBreadth')
-  const comparator = typeof deterministicOption === "function" 
-      ? deterministicOption 
-      : (a, b) => {
-        // We can safely assume that the input values are always strings in this case
-        if (a < b) {
-          return -1;
-        }
-        if (a > b) {
-          return 1;
-        }
-        return 0;
-      }
 
   function stringifyFnReplacer (key, parent, stack, replacer, spacer, indentation) {
     let value = parent[key]
