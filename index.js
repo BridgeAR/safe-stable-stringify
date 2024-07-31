@@ -104,7 +104,7 @@ function getDeterministicOption (options, key) {
     if (typeof value === 'boolean') {
       return value
     }
-    if (typeof value === 'function' && value.length === 2) {
+    if (typeof value === 'function') {
       return value
     }
   }
