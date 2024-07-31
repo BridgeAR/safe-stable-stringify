@@ -1315,7 +1315,7 @@ test('deterministic option possibilities', (assert) => {
 
   const serializer1 = stringify.configure({ deterministic: false })
   serializer1(NaN)
-  
+
   const serializer2 = stringify.configure({ deterministic: (a, b) => a.localeCompare(b) })
   serializer2(NaN)
 
@@ -1324,12 +1324,12 @@ test('deterministic option possibilities', (assert) => {
 
 test('deterministic default sorting', function (assert) {
   const serializer = stringify.configure({ deterministic: true })
-  
+
   const obj = { b: 2, c: 3, a: 1 }
   const expected = '{\n "a": 1,\n "b": 2,\n "c": 3\n}'
   const actual = serializer(obj, null, 1)
   assert.equal(actual, expected)
-  
+
   assert.end()
 })
 

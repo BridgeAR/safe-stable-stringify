@@ -189,7 +189,7 @@ function configure (options) {
   const circularValue = getCircularValueOption(options)
   const bigint = getBooleanOption(options, 'bigint')
   const deterministic = getDeterministicOption(options, 'deterministic')
-  const comparator = typeof deterministic === "function" ? deterministic : undefined
+  const comparator = typeof deterministic === 'function' ? deterministic : undefined
   const maximumDepth = getPositiveIntegerOption(options, 'maximumDepth')
   const maximumBreadth = getPositiveIntegerOption(options, 'maximumBreadth')
 
