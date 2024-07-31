@@ -35,7 +35,7 @@ function strEscape (str) {
 function insertSort (array, comparator) {
   // Insertion sort is very efficient for small input sizes, but it has a bad
   // worst case complexity. Thus, use native array sort for bigger values.
-  if (array.length > 2e2) {
+  if (array.length > 2e2 || comparator) {
     return array.sort(comparator)
   }
   for (let i = 1; i < array.length; i++) {
