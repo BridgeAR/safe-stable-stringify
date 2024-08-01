@@ -1303,3 +1303,44 @@ test('strict option replacer array', (assert) => {
 
   assert.end()
 })
+
+test('deterministic option possibilities', (assert) => {
+  assert.throws(() => {
+    // @ts-expect-error
+    stringify.configure({ deterministic: 1 })
+  }, {
+    message: 'The "deterministic" argument must be of type boolean or comparator function',
+    name: 'TypeError'
+  })
+
+  const serializer1 = stringify.configure({ deterministic: false })
+  serializer1(NaN)
+
+  const serializer2 = stringify.configure({ deterministic: (a, b) => a.localeCompare(b) })
+  serializer2(NaN)
+
+  assert.end()
+})
+
+test('deterministic default sorting', function (assert) {
+  const serializer = stringify.configure({ deterministic: true })
+
+  const obj = { b: 2, c: 3, a: 1 }
+  const expected = '{\n "a": 1,\n "b": 2,\n "c": 3\n}'
+  const actual = serializer(obj, null, 1)
+  assert.equal(actual, expected)
+
+  assert.end()
+})
+
+test('deterministic custom sorting', function (assert) {
+  // Descending
+  const serializer = stringify.configure({ deterministic: (a, b) => b.localeCompare(a) })
+
+  const obj = { b: 2, c: 3, a: 1 }
+  const expected = '{\n "c": 3,\n "b": 2,\n "a": 1\n}'
+  const actual = serializer(obj, null, 1)
+  assert.equal(actual, expected)
+
+  assert.end()
+})

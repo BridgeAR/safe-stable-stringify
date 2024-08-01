@@ -32,11 +32,11 @@ function strEscape (str) {
   return JSON.stringify(str)
 }
 
-function insertSort (array) {
-  // Insertion sort is very efficient for small input sizes but it has a bad
+function insertSort (array, comparator) {
+  // Insertion sort is very efficient for small input sizes, but it has a bad
   // worst case complexity. Thus, use native array sort for bigger values.
-  if (array.length > 2e2) {
-    return array.sort()
+  if (array.length > 2e2 || comparator) {
+    return array.sort(comparator)
   }
   for (let i = 1; i < array.length; i++) {
     const currentValue = array[i]
@@ -95,6 +95,23 @@ function getCircularValueOption (options) {
     throw new TypeError('The "circularValue" argument must be of type string or the value null or undefined')
   }
   return '"[Circular]"'
+}
+
+function getDeterministicOption (options, key) {
+  let value
+  if (hasOwnProperty.call(options, key)) {
+    value = options[key]
+    if (typeof value === 'boolean') {
+      return value
+    }
+    if (typeof value === 'function') {
+      return value
+    }
+  }
+  if (value === undefined) {
+    return true
+  }
+  throw new TypeError(`The "${key}" argument must be of type boolean or comparator function`)
 }
 
 function getBooleanOption (options, key) {
@@ -171,7 +188,8 @@ function configure (options) {
   }
   const circularValue = getCircularValueOption(options)
   const bigint = getBooleanOption(options, 'bigint')
-  const deterministic = getBooleanOption(options, 'deterministic')
+  const deterministic = getDeterministicOption(options, 'deterministic')
+  const comparator = typeof deterministic === 'function' ? deterministic : undefined
   const maximumDepth = getPositiveIntegerOption(options, 'maximumDepth')
   const maximumBreadth = getPositiveIntegerOption(options, 'maximumBreadth')
 
@@ -248,7 +266,7 @@ function configure (options) {
         }
         const maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
         if (deterministic && !isTypedArrayWithEntries(value)) {
-          keys = insertSort(keys)
+          keys = insertSort(keys, comparator)
         }
         stack.push(value)
         for (let i = 0; i < maximumPropertiesToStringify; i++) {
@@ -447,7 +465,7 @@ function configure (options) {
           separator = join
         }
         if (deterministic) {
-          keys = insertSort(keys)
+          keys = insertSort(keys, comparator)
         }
         stack.push(value)
         for (let i = 0; i < maximumPropertiesToStringify; i++) {
@@ -551,7 +569,7 @@ function configure (options) {
           separator = ','
         }
         if (deterministic) {
-          keys = insertSort(keys)
+          keys = insertSort(keys, comparator)
         }
         stack.push(value)
         for (let i = 0; i < maximumPropertiesToStringify; i++) {
