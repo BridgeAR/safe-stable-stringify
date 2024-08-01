@@ -1,5 +1,30 @@
 # Changelog
 
+## v2.5.0
+
+- Accept `Array#sort(comparator)` comparator method as deterministic option value to use that comparator for sorting object keys.
+
+```js
+import { configure } from 'safe-stable-stringify'
+
+const object = {
+  a: 1,
+  b: 2,
+  c: 3,
+}
+
+const stringify = configure({
+  deterministic: (a, b) => b.localeCompare(a)
+})
+
+stringify(object)
+// '{"c": 3,"b":2,"a":1}'
+```
+
+- Very minor performance optimization.
+
+Thanks to @flobernd, @cesco69 and @prisis to contribute to this release!
+
 ## v2.4.3
 
 - Fixed toJSON function receiving array keys as number instead of string
