@@ -18,7 +18,7 @@ const stringify = configure({
 })
 
 stringify(object)
-// '{"c": 3,"b":2,"a":1}'
+// '{"c":3,"b":2,"a":1}'
 ```
 
 - Very minor performance optimization.
