@@ -1,6 +1,6 @@
 {
   "name": "safe-stable-stringify",
-  "version": "2.4.3",
+  "version": "2.5.0",
   "description": "Deterministic and safely JSON.stringify to quickly serialize JavaScript objects",
   "exports": {
     "require": "./index.js",
