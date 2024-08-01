@@ -50,8 +50,9 @@ stringify(circular, ['a', 'b'], 2)
   circular references. Set to `undefined`, circular properties are not
   serialized (array entries are replaced with `null`). Set to `Error`, to throw
   on circular references. **Default:** `'[Circular]'`.
-* `deterministic` {boolean} If `true`, guarantee a deterministic key order
-  instead of relying on the insertion order. **Default:** `true`.
+* `deterministic` {boolean|function} If `true` or a `Array#sort(comparator)`
+  comparator method, guarantee a deterministic key order instead of relying on
+  the insertion order. **Default:** `true`.
 * `maximumBreadth` {number} Maximum number of entries to serialize per object
   (at least one). The serialized output contains information about how many
   entries have not been serialized. Ignored properties are counted as well
@@ -63,7 +64,8 @@ stringify(circular, ['a', 'b'], 2)
 * `strict` {boolean} Instead of handling any JSON value gracefully, throw an
   error in case it may not be represented as JSON (functions, NaN, ...).
   Circular values and bigint values throw as well in case either option is not
-  explicitly defined. Sets and Maps are not detected! **Default:** `false`
+  explicitly defined. Sets and Maps are not detected as well as Symbol keys!
+  **Default:** `false`
 * Returns: {function} A stringify function with the options applied.
 
 ```js
