@@ -1,6 +1,6 @@
 'use strict'
 
-const Benchmark = require('benchmark')
+const Benchmark = require('bench-node')
 const suite = new Benchmark.Suite()
 const testData = require('./test.json')
 
@@ -13,7 +13,7 @@ const stringifyPackages = {
   'faster-stable-stringify': true,
   'json-stringify-deterministic': true,
   'fast-safe-stringify': 'stable',
-  this: require('.')
+  'safe-stable-stringify': require('.')
 }
 
 for (const name in stringifyPackages) {
@@ -31,9 +31,4 @@ for (const name in stringifyPackages) {
   })
 }
 
-suite
-  .on('cycle', (event) => console.log(String(event.target)))
-  .on('complete', function () {
-    console.log('\nThe fastest is ' + this.filter('fastest').map('name'))
-  })
-  .run({ async: true, delay: 5, minSamples: 150 })
+suite.run()

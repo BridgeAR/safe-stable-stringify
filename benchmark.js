@@ -1,10 +1,9 @@
 'use strict'
 
-const Benchmark = require('benchmark')
+const Benchmark = require('bench-node')
 const suite = new Benchmark.Suite()
 const stringify = require('.').configure({ deterministic: true })
 
-// eslint-disable-next-line
 const array = Array.from({ length: 10 }, (_, i) => i)
 const obj = { array }
 const circ = JSON.parse(JSON.stringify(obj))
@@ -106,14 +105,4 @@ suite.add('indentation:   deep circular', function () {
   stringify(deepCirc, null, 2)
 })
 
-// add listeners
-suite.on('cycle', function (event) {
-  console.log(String(event.target))
-})
-
-suite.on('complete', function () {
-  console.log('\nBenchmark done')
-  // console.log('\nFastest is ' + this.filter('fastest').map('name'))
-})
-
-suite.run({ delay: 1, minSamples: 150 })
+suite.run()

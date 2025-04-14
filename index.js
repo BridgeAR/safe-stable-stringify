@@ -108,7 +108,7 @@ function getDeterministicOption (options) {
   return value === undefined ? true : value
 }
 
-function getBooleanOption (options, key) {
+function getBooleanOption (options, key, defaultValue = true) {
   let value
   if (hasOwnProperty.call(options, key)) {
     value = options[key]
@@ -116,7 +116,7 @@ function getBooleanOption (options, key) {
       throw new TypeError(`The "${key}" argument must be of type boolean`)
     }
   }
-  return value === undefined ? true : value
+  return value === undefined ? defaultValue : value
 }
 
 function getPositiveIntegerOption (options, key) {
@@ -169,6 +169,19 @@ function getStrictOption (options) {
   }
 }
 
+function makeSafe (method) {
+  return function (...input) {
+    try {
+      return method(...input)
+    } catch (error) {
+      const message = typeof error?.message === 'string'
+        ? error.message
+        : (() => { try { return String(error) } catch { return 'Failed' } })()
+      return strEscape('Error: Stringification failed. Message: ' + message)
+    }
+  }
+}
+
 function configure (options) {
   options = { ...options }
   const fail = getStrictOption(options)
@@ -186,8 +199,9 @@ function configure (options) {
   const comparator = typeof deterministic === 'function' ? deterministic : undefined
   const maximumDepth = getPositiveIntegerOption(options, 'maximumDepth')
   const maximumBreadth = getPositiveIntegerOption(options, 'maximumBreadth')
+  const safe = getBooleanOption(options, 'safe', false)
 
-  function stringifyFnReplacer (key, parent, stack, replacer, spacer, indentation) {
+  let stringifyFnReplacer = function (key, parent, stack, replacer, spacer, indentation) {
     let value = parent[key]
 
     if (typeof value === 'object' && value !== null && typeof value.toJSON === 'function') {
@@ -298,7 +312,7 @@ function configure (options) {
     }
   }
 
-  function stringifyArrayReplacer (key, value, stack, replacer, spacer, indentation) {
+  let stringifyArrayReplacer = function (key, value, stack, replacer, spacer, indentation) {
     if (typeof value === 'object' && value !== null && typeof value.toJSON === 'function') {
       value = value.toJSON(key)
     }
@@ -387,7 +401,7 @@ function configure (options) {
     }
   }
 
-  function stringifyIndent (key, value, stack, spacer, indentation) {
+  let stringifyIndent = function (key, value, stack, spacer, indentation) {
     switch (typeof value) {
       case 'string':
         return strEscape(value)
@@ -497,7 +511,7 @@ function configure (options) {
     }
   }
 
-  function stringifySimple (key, value, stack) {
+  let stringifySimple = function (key, value, stack) {
     switch (typeof value) {
       case 'string':
         return strEscape(value)
@@ -596,6 +610,13 @@ function configure (options) {
       default:
         return fail ? fail(value) : undefined
     }
+  }
+
+  if (safe) {
+    stringifyFnReplacer = makeSafe(stringifyFnReplacer)
+    stringifyArrayReplacer = makeSafe(stringifyArrayReplacer)
+    stringifyIndent = makeSafe(stringifyIndent)
+    stringifySimple = makeSafe(stringifySimple)
   }
 
   function stringify (value, replacer, space) {

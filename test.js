@@ -1344,3 +1344,38 @@ test('deterministic custom sorting', function (assert) {
 
   assert.end()
 })
+
+test('safe mode safeguards against failing getters', function (assert) {
+  const serializer = stringify.configure({ safe: true })
+
+  const obj = { b: 2, c: { a: true, get b () { throw new Error('Oops') } }, a: 1 }
+  const expected = '{\n "a": 1,\n "b": 2,\n "c": "Error: Stringification failed. Message: Oops"\n}'
+  const actual = serializer(obj, null, 1)
+  assert.equal(actual, expected)
+
+  assert.end()
+})
+
+test('safe mode safeguards against failing toJSON method', function (assert) {
+  const serializer = stringify.configure({ safe: true })
+
+  // eslint-disable-next-line
+  const obj = { b: 2, c: { a: true, toJSON () { throw 'Oops' } }, a: 1 }
+  const expected = '{\n "a": 1,\n "b": 2,\n "c": "Error: Stringification failed. Message: Oops"\n}'
+  const actual = serializer(obj, null, 1)
+  assert.equal(actual, expected)
+
+  assert.end()
+})
+
+test('safe mode safeguards against failing getters and a difficult to stringify error', function (assert) {
+  const serializer = stringify.configure({ safe: true })
+
+  // eslint-disable-next-line
+  const obj = { b: 2, c: { a: true, toJSON () { throw { toString() { throw new Error('Yikes') } } } }, a: 1 }
+  const expected = '{\n "a": 1,\n "b": 2,\n "c": "Error: Stringification failed. Message: Failed"\n}'
+  const actual = serializer(obj, null, 1)
+  assert.equal(actual, expected)
+
+  assert.end()
+})

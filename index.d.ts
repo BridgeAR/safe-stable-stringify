@@ -11,6 +11,7 @@ export interface StringifyOptions {
   maximumBreadth?: number,
   maximumDepth?: number,
   strict?: boolean,
+  safe?: boolean,
 }
 
 export namespace stringify {

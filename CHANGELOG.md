@@ -1,5 +1,29 @@
 # Changelog
 
+## v2.6.0
+
+- Added `safe` option to not fail in case a getter or `.toJSON()` throws an error.
+  Instead, a string as error message is replacing the object inspection. This allows to partially inspect such objects.
+  The default is `false` to prevent any breaking change.
+
+```js
+import { configure } from 'safe-stable-stringify'
+
+const stringify = configure({
+  safe: true
+})
+
+stringify([{
+  foo: { a: 5, get foo() { throw new Error('Oops') }, c: true }
+}])
+// '[{"foo":"Error: Stringification failed. Message: Oops"}]'
+
+stringify([{
+  foo: { a: 5, toJSON() { throw new Error('Oops') }, c: true }
+}])
+// '[{"foo":"Error: Stringification failed. Message: Oops"}]'
+```
+
 ## v2.5.0
 
 - Accept `Array#sort(comparator)` comparator method as deterministic option value to use that comparator for sorting object keys.
