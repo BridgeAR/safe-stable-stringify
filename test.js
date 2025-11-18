@@ -911,10 +911,10 @@ test('maximumBreadth config', function (assert) {
   })
 
   const result = serialize(obj, (key, val) => val)
-  assert.equal(result, '{"a":["a","b","c","... 1 item not stringified"]}')
+  assert.equal(result, '{"a":["a","b","c","... 2 items not stringified"]}')
 
   const res2 = serialize(obj, ['a', 'b'])
-  assert.equal(res2, '{"a":["a","b","c","... 1 item not stringified"]}')
+  assert.equal(res2, '{"a":["a","b","c","... 2 items not stringified"]}')
 
   const res3 = serialize(obj, null, 2)
   assert.equal(res3, `{
@@ -922,7 +922,7 @@ test('maximumBreadth config', function (assert) {
     "a",
     "b",
     "c",
-    "... 1 item not stringified"
+    "... 2 items not stringified"
   ]
 }`)
 
@@ -935,6 +935,9 @@ test('maximumBreadth config', function (assert) {
     "...": "2 items not stringified"
   }
 }`)
+
+  const res5 = serialize(['a', 'b', 'c', 'd'])
+  assert.equal(res5, '["a","b","c","... 1 item not stringified"]')
 
   assert.end()
 })
@@ -976,7 +979,7 @@ test('limit number of keys in array', (assert) => {
     arr.push(i)
   }
   const res = serialize(arr)
-  const expected = '[0,1,2,"... 96 items not stringified"]'
+  const expected = '[0,1,2,"... 97 items not stringified"]'
   assert.equal(res, expected)
   assert.end()
 })
