@@ -64,16 +64,23 @@ function isTypedArrayWithEntries (value) {
   return typedArrayPrototypeGetSymbolToStringTag.call(value) !== undefined && value.length !== 0
 }
 
-function stringifyTypedArray (array, separator, maximumBreadth) {
+function stringifyTypedArray (array, separator, maximumBreadth, bigint) {
   if (array.length < maximumBreadth) {
     maximumBreadth = array.length
   }
   const whitespace = separator === ',' ? '' : ' '
-  let res = `"0":${whitespace}${array[0]}`
+  let res = `"0":${whitespace}${formatTypedArrayValue(array[0], bigint)}`
   for (let i = 1; i < maximumBreadth; i++) {
-    res += `${separator}"${i}":${whitespace}${array[i]}`
+    res += `${separator}"${i}":${whitespace}${formatTypedArrayValue(array[i], bigint)}`
   }
   return res
+}
+
+function formatTypedArrayValue (value, bigint) {
+  if (typeof value === 'bigint' && bigint === 'string') {
+    return strEscape(String(value))
+  }
+  return String(value)
 }
 
 function getCircularValueOption (options) {
@@ -108,7 +115,22 @@ function getDeterministicOption (options) {
   return value === undefined ? true : value
 }
 
-function getBooleanOption (options, key, defaultValue = true) {
+function getBigIntOption (options) {
+  let value
+  if (hasOwnProperty.call(options, 'bigint')) {
+    value = options.bigint
+    if (typeof value === 'string') {
+      if (value !== 'string') {
+        throw new TypeError('The "bigint" argument must be of type boolean or the string "string"')
+      }
+    } else if (typeof value !== 'boolean') {
+      throw new TypeError('The "bigint" argument must be of type boolean or the string "string"')
+    }
+  }
+  return value === undefined ? true : value
+}
+
+function getBooleanOption (options, key, defaultValue) {
   let value
   if (hasOwnProperty.call(options, key)) {
     value = options[key]
@@ -222,7 +244,7 @@ function configure (options) {
     }
   }
   const circularValue = getCircularValueOption(options)
-  const bigint = getBooleanOption(options, 'bigint')
+  const bigint = getBigIntOption(options)
   const deterministic = getDeterministicOption(options)
   const comparator = typeof deterministic === 'function' ? deterministic : undefined
   const maximumDepth = getPositiveIntegerOption(options, 'maximumDepth')
@@ -331,6 +353,9 @@ function configure (options) {
       case 'undefined':
         return undefined
       case 'bigint':
+        if (bigint === 'string') {
+          return strEscape(String(value))
+        }
         if (bigint) {
           return String(value)
         }
@@ -420,6 +445,9 @@ function configure (options) {
       case 'undefined':
         return undefined
       case 'bigint':
+        if (bigint === 'string') {
+          return strEscape(String(value))
+        }
         if (bigint) {
           return String(value)
         }
@@ -495,7 +523,7 @@ function configure (options) {
         let separator = ''
         let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
         if (isTypedArrayWithEntries(value)) {
-          res += stringifyTypedArray(value, join, maximumBreadth)
+          res += stringifyTypedArray(value, join, maximumBreadth, bigint)
           keys = keys.slice(value.length)
           maximumPropertiesToStringify -= value.length
           separator = join
@@ -530,6 +558,9 @@ function configure (options) {
       case 'undefined':
         return undefined
       case 'bigint':
+        if (bigint === 'string') {
+          return strEscape(String(value))
+        }
         if (bigint) {
           return String(value)
         }
@@ -600,7 +631,7 @@ function configure (options) {
         let separator = ''
         let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
         if (hasLength && isTypedArrayWithEntries(value)) {
-          res += stringifyTypedArray(value, ',', maximumBreadth)
+          res += stringifyTypedArray(value, ',', maximumBreadth, bigint)
           keys = keys.slice(value.length)
           maximumPropertiesToStringify -= value.length
           separator = ','
@@ -631,6 +662,9 @@ function configure (options) {
       case 'undefined':
         return undefined
       case 'bigint':
+        if (bigint === 'string') {
+          return strEscape(String(value))
+        }
         if (bigint) {
           return String(value)
         }
