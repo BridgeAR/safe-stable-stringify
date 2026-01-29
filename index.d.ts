@@ -5,7 +5,7 @@ export function stringify(value: string | number | unknown[] | null | boolean | 
 export function stringify(value: unknown, replacer?: ((key: string, value: unknown) => unknown) | (number | string)[] | null | undefined, space?: string | number): string | undefined
 
 export interface StringifyOptions {
-  bigint?: boolean,
+  bigint?: boolean | 'string',
   circularValue?: string | null | TypeErrorConstructor | ErrorConstructor,
   deterministic?: boolean | ((a: string, b: string) => number),
   maximumBreadth?: number,

@@ -566,6 +566,31 @@ test('bigint option', function (assert) {
   assert.end()
 })
 
+test('bigint option as string', function (assert) {
+  const stringifyBigIntString = stringify.configure({ bigint: 'string' })
+  const obj = { a: 1n, b: 9_007_199_254_740_993n }
+  const expected = '{"a":"1","b":"9007199254740993"}'
+
+  assert.equal(stringifyBigIntString(obj), expected)
+
+  const typed = { a: new BigInt64Array([1n, 2n]) }
+  const expectedTyped = '{"a":{"0":"1","1":"2"}}'
+  assert.equal(stringifyBigIntString(typed), expectedTyped)
+
+  const expectedIndent = '{\n "a": "1",\n "b": "9007199254740993"\n}'
+  assert.equal(stringifyBigIntString(obj, null, 1), expectedIndent)
+  assert.equal(stringifyBigIntString(obj, (key, value) => value), expected)
+  assert.equal(stringifyBigIntString(obj, ['a']), '{"a":"1"}')
+
+  assert.end()
+})
+
+test('bigint option invalid values', function (assert) {
+  assert.throws(() => stringify.configure({ bigint: 'nope' }), /bigint/)
+  assert.throws(() => stringify.configure({ bigint: 1 }), /bigint/)
+  assert.end()
+})
+
 test('bigint option with replacer', function (assert) {
   const stringifyBigInt = stringify.configure({ bigint: true })
 
@@ -1342,6 +1367,21 @@ test('deterministic custom sorting', function (assert) {
   const actual = serializer(obj, null, 1)
   assert.equal(actual, expected)
 
+  assert.end()
+})
+
+test('safe option defaults and explicit false', function (assert) {
+  const defaultSerializer = stringify.configure({})
+  const falseSerializer = stringify.configure({ safe: false })
+
+  assert.equal(defaultSerializer({ a: 1 }), '{"a":1}')
+  assert.equal(falseSerializer({ a: 1 }), '{"a":1}')
+
+  assert.end()
+})
+
+test('safe option must be boolean', function (assert) {
+  assert.throws(() => stringify.configure({ safe: 'yes' }), /safe/)
   assert.end()
 })
 

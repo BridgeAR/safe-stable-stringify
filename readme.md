@@ -44,7 +44,8 @@ stringify(circular, ['a', 'b'], 2)
 
 ## stringify.configure(options)
 
-* `bigint` {boolean} If `true`, bigint values are converted to a number.
+* `bigint` {boolean|string} If `true`, bigint values are converted to a
+  number. If set to `'string'`, bigint values are serialized as JSON strings.
   Otherwise they are ignored. **Default:** `true`.
 * `circularValue` {string|null|undefined|ErrorConstructor} Defines the value for
   circular references. Set to `undefined`, circular properties are not
