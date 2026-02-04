@@ -246,8 +246,8 @@ function configure (options) {
           }
           const tmp = stringifyFnReplacer(String(i), value, stack, replacer, spacer, indentation)
           res += tmp !== undefined ? tmp : 'null'
-          if (value.length - 1 > maximumBreadth) {
-            const removedKeys = value.length - maximumBreadth - 1
+          if (value.length > maximumBreadth) {
+            const removedKeys = value.length - maximumBreadth
             res += `${join}"... ${getItemCount(removedKeys)} not stringified"`
           }
           if (spacer !== '') {
@@ -354,8 +354,8 @@ function configure (options) {
           }
           const tmp = stringifyArrayReplacer(String(i), value[i], stack, replacer, spacer, indentation)
           res += tmp !== undefined ? tmp : 'null'
-          if (value.length - 1 > maximumBreadth) {
-            const removedKeys = value.length - maximumBreadth - 1
+          if (value.length > maximumBreadth) {
+            const removedKeys = value.length - maximumBreadth
             res += `${join}"... ${getItemCount(removedKeys)} not stringified"`
           }
           if (spacer !== '') {
@@ -444,8 +444,8 @@ function configure (options) {
           }
           const tmp = stringifyIndent(String(i), value[i], stack, spacer, indentation)
           res += tmp !== undefined ? tmp : 'null'
-          if (value.length - 1 > maximumBreadth) {
-            const removedKeys = value.length - maximumBreadth - 1
+          if (value.length > maximumBreadth) {
+            const removedKeys = value.length - maximumBreadth
             res += `${join}"... ${getItemCount(removedKeys)} not stringified"`
           }
           res += `\n${originalIndentation}`
@@ -553,8 +553,8 @@ function configure (options) {
           }
           const tmp = stringifySimple(String(i), value[i], stack)
           res += tmp !== undefined ? tmp : 'null'
-          if (value.length - 1 > maximumBreadth) {
-            const removedKeys = value.length - maximumBreadth - 1
+          if (value.length > maximumBreadth) {
+            const removedKeys = value.length - maximumBreadth
             res += `,"... ${getItemCount(removedKeys)} not stringified"`
           }
           stack.pop()
