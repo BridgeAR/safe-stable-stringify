@@ -66,9 +66,9 @@ stringify(circular, ['a', 'b'], 2)
   Circular values and bigint values throw as well in case either option is not
   explicitly defined. Sets and Maps are not detected as well as Symbol keys!
   **Default:** `false`
-* `safe` {boolean} If `true`, calls to .toJSON() and getters that throw an error
-  are going to return the error message as content in place of the object
-  instead of throwing the error. **Default:** `false`
+* `safe` {boolean} If `true`, calls to .toJSON() and replacers that throw will
+  return the error message in place of the object instead of throwing.
+  **Default:** `false`
 * Returns: {function} A stringify function with the options applied.
 
 ```js

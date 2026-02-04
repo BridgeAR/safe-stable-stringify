@@ -162,24 +162,34 @@ function getStrictOption (options) {
     if (value) {
       return (value) => {
         let message = `Object can not safely be stringified. Received type ${typeof value}`
-        if (typeof value !== 'function') message += ` (${value.toString()})`
+        if (typeof value !== 'function') message += ` (${safeErrorMessage(value)})`
         throw new Error(message)
       }
     }
   }
 }
 
-function makeSafe (method) {
-  return function (...input) {
-    try {
-      return method(...input)
-    } catch (error) {
-      const message = typeof error?.message === 'string'
-        ? error.message
-        : (() => { try { return String(error) } catch { return 'Failed' } })()
-      return strEscape('Error: Stringification failed. Message: ' + message)
-    }
+function safeErrorMessage (error) {
+  try {
+    return String(error)
+  } catch {
+    return 'Failed'
   }
+}
+
+function callSafe (method, ...input) {
+  try {
+    return method(...input)
+  } catch (error) {
+    const message = typeof error?.message === 'string'
+      ? error.message
+      : safeErrorMessage(error)
+    return strEscape('Error: Stringification failed. Message: ' + message)
+  }
+}
+
+function makeSafe (method) {
+  return callSafe.bind(null, method)
 }
 
 function configure (options) {
@@ -205,7 +215,7 @@ function configure (options) {
     let value = parent[key]
 
     if (typeof value === 'object' && value !== null && typeof value.toJSON === 'function') {
-      value = value.toJSON(key)
+      value = safe ? callSafe(value.toJSON, key) : value.toJSON(key)
     }
     value = replacer.call(parent, key, value)
 
@@ -314,7 +324,7 @@ function configure (options) {
 
   let stringifyArrayReplacer = function (key, value, stack, replacer, spacer, indentation) {
     if (typeof value === 'object' && value !== null && typeof value.toJSON === 'function') {
-      value = value.toJSON(key)
+      value = safe ? callSafe(value.toJSON, key) : value.toJSON(key)
     }
 
     switch (typeof value) {
@@ -410,7 +420,7 @@ function configure (options) {
           return 'null'
         }
         if (typeof value.toJSON === 'function') {
-          value = value.toJSON(key)
+          value = safe ? callSafe(value.toJSON, key) : value.toJSON(key)
           // Prevent calling `toJSON` again.
           if (typeof value !== 'object') {
             return stringifyIndent(key, value, stack, spacer, indentation)
@@ -520,7 +530,7 @@ function configure (options) {
           return 'null'
         }
         if (typeof value.toJSON === 'function') {
-          value = value.toJSON(key)
+          value = safe ? callSafe(value.toJSON, key) : value.toJSON(key)
           // Prevent calling `toJSON` again
           if (typeof value !== 'object') {
             return stringifySimple(key, value, stack)
