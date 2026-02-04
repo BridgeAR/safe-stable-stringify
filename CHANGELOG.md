@@ -1,6 +1,11 @@
 # Changelog
 
-## v2.6.0
+## Next
+
+- Fixed off by one error using the `maximumBreadth` option. It showed one entry to few being skipped.
+- Skipped `bigint` documentation issue. Using that option always generated strings, not numbers.
+
+## v2.6.0 (unreleased)
 
 - Added `safe` option to not fail in case a getter or `.toJSON()` throws an error.
   Instead, a string as error message is replacing the object inspection. This allows to partially inspect such objects.
