@@ -11,7 +11,7 @@
     "moduleResolution": "nodenext",
     "importHelpers": false,
     "target": "esnext",
-    "module": "CommonJS",
+    "module": "NodeNext",
     "strict": true,
     "noImplicitAny": false,
     "lib": [
