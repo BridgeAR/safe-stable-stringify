@@ -177,19 +177,37 @@ function safeErrorMessage (error) {
   }
 }
 
-function callSafe (method, ...input) {
+function getErrorMessage (error, name) {
+  const message = typeof error?.message === 'string'
+    ? error.message
+    : safeErrorMessage(error)
+  if (name) {
+    return `Error: Stringification failed with ${name} (${message})`
+  }
+  return `Error: Stringification failed (${message})`
+}
+
+function callSafe (method, thisArg, input) {
   try {
-    return method(...input)
+    return method.call(thisArg, input)
   } catch (error) {
-    const message = typeof error?.message === 'string'
-      ? error.message
-      : safeErrorMessage(error)
-    return strEscape('Error: Stringification failed. Message: ' + message)
+    return getErrorMessage(error, method.name)
   }
 }
 
-function makeSafe (method) {
-  return callSafe.bind(null, method)
+function makeSafe (method, name) {
+  const safeMethod = function (...input) {
+    try {
+      return method(...input)
+    } catch (error) {
+      if (name !== undefined) {
+        return getErrorMessage(error, name)
+      }
+      return `"${getErrorMessage(error, name)}"`
+    }
+  }
+  Object.defineProperty(safeMethod, 'name', { value: `safe_${method.name}` })
+  return safeMethod
 }
 
 function configure (options) {
@@ -215,7 +233,7 @@ function configure (options) {
     let value = parent[key]
 
     if (typeof value === 'object' && value !== null && typeof value.toJSON === 'function') {
-      value = safe ? callSafe(value.toJSON, key) : value.toJSON(key)
+      value = safe ? callSafe(value.toJSON, value, key) : value.toJSON(key)
     }
     value = replacer.call(parent, key, value)
 
@@ -324,7 +342,7 @@ function configure (options) {
 
   let stringifyArrayReplacer = function (key, value, stack, replacer, spacer, indentation) {
     if (typeof value === 'object' && value !== null && typeof value.toJSON === 'function') {
-      value = safe ? callSafe(value.toJSON, key) : value.toJSON(key)
+      value = safe ? callSafe(value.toJSON, value, key) : value.toJSON(key)
     }
 
     switch (typeof value) {
@@ -420,7 +438,7 @@ function configure (options) {
           return 'null'
         }
         if (typeof value.toJSON === 'function') {
-          value = safe ? callSafe(value.toJSON, key) : value.toJSON(key)
+          value = safe ? callSafe(value.toJSON, value, key) : value.toJSON(key)
           // Prevent calling `toJSON` again.
           if (typeof value !== 'object') {
             return stringifyIndent(key, value, stack, spacer, indentation)
@@ -530,7 +548,7 @@ function configure (options) {
           return 'null'
         }
         if (typeof value.toJSON === 'function') {
-          value = safe ? callSafe(value.toJSON, key) : value.toJSON(key)
+          value = safe ? callSafe(value.toJSON, value, key) : value.toJSON(key)
           // Prevent calling `toJSON` again
           if (typeof value !== 'object') {
             return stringifySimple(key, value, stack)
@@ -639,6 +657,9 @@ function configure (options) {
       }
       if (replacer != null) {
         if (typeof replacer === 'function') {
+          if (safe) {
+            replacer = makeSafe(replacer, replacer.name)
+          }
           return stringifyFnReplacer('', { '': value }, [], replacer, spacer, '')
         }
         if (Array.isArray(replacer)) {

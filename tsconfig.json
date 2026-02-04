@@ -19,6 +19,6 @@
       "dom"
     ]
   },
-  "include": ["**/*.js", "**/*.ts"],
+  "include": ["**/*.js", "**/*.ts", "esm/wrapper.mjs"],
   "exclude": ["compare.js", "benchmark.js", "./coverage"]
 }

@@ -1,4 +1,7 @@
 {
+  "name": "safe-stable-stringify",
+  "version": "2.5.0",
   "type": "module",
-  "main": "wrapper.js"
+  "main": "./wrapper.mjs",
+  "exports": "./wrapper.mjs"
 }

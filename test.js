@@ -1,6 +1,7 @@
 const { test } = require('tap')
 const { stringify } = require('./index.js')
 const clone = require('clone')
+const { constants: { MAX_STRING_LENGTH } } = require('buffer')
 
 test('toJSON receives array keys as string', function (assert) {
   const object = [{
@@ -1352,31 +1353,105 @@ test('safe mode safeguards against failing getters', function (assert) {
   const serializer = stringify.configure({ safe: true })
 
   const obj = { b: 2, c: { a: true, get b () { throw new Error('Oops') } }, a: 1 }
-  const expected = '{\n "a": 1,\n "b": 2,\n "c": "Error: Stringification failed. Message: Oops"\n}'
+  const expected = '{\n "a": 1,\n "b": 2,\n "c": "Error: Stringification failed (Oops)"\n}'
   const actual = serializer(obj, null, 1)
   assert.equal(actual, expected)
 
   assert.end()
 })
 
-test('safe mode safeguards against failing toJSON method', function (assert) {
+test('safe mode safeguards against too long string', function (assert) {
+  const serializer = stringify.configure({ safe: true })
+
+  const obj = {
+    a: 1,
+    b: 2,
+    get c () {
+      return 'a'.repeat(MAX_STRING_LENGTH + 1)
+    }
+  }
+  const expected = '"Error: Stringification failed (Invalid string length)"'
+  const actual = serializer(obj, null, 1)
+  assert.equal(actual, expected)
+
+  assert.end()
+})
+
+test('safe mode safeguards against too long string in nested object still being stringified', function (assert) {
+  const serializer = stringify.configure({ safe: true })
+
+  const obj = {
+    a: 1,
+    b: 2,
+    get c () {
+      return 'a'.repeat(MAX_STRING_LENGTH)
+    }
+  }
+  const expected = '{\n "a": 1,\n "b": 2,\n "c": "Error: Stringification failed (Invalid string length)"\n}'
+  const actual = serializer(obj, null, 1)
+  assert.equal(actual, expected)
+
+  assert.end()
+})
+
+test('safe mode safeguards against failing toJSON method in nested object', function (assert) {
   const serializer = stringify.configure({ safe: true })
 
   // eslint-disable-next-line
   const obj = { b: 2, c: { a: true, toJSON () { throw 'Oops' } }, a: 1 }
-  const expected = '{\n "a": 1,\n "b": 2,\n "c": "Error: Stringification failed. Message: Oops"\n}'
-  const actual = serializer(obj, null, 1)
+  const expected = '{\n "a": 1,\n "b": 2,\n "c": "Error: Stringification failed with toJSON (Oops)"\n}'
+  const actual = serializer(obj, ['a', 'b', 'c'], 1)
   assert.equal(actual, expected)
 
   assert.end()
 })
 
-test('safe mode safeguards against failing getters and a difficult to stringify error', function (assert) {
+test('safe mode safeguards against failing toJSON on root object', function (assert) {
+  const serializer = stringify.configure({ safe: true })
+
+  const obj = { toJSON () { throw new Error('Oops') } }
+  const expected = '"Error: Stringification failed with toJSON (Oops)"'
+  const actual = serializer(obj)
+  assert.equal(actual, expected)
+
+  assert.end()
+})
+
+test('safe mode safeguards against failing replacer function', function (assert) {
+  const serializer = stringify.configure({ safe: true })
+
+  const replacer = (key, value) => {
+    if (key === 'b') throw new Error('Oops')
+    return value
+  }
+  const obj = { a: 1, b: 2 }
+  const expected = '{\n "a": 1,\n "b": "Error: Stringification failed with replacer (Oops)"\n}'
+  const actual = serializer(obj, replacer, 1)
+  assert.equal(actual, expected)
+
+  assert.end()
+})
+
+test('safe mode safeguards against failing toJSON method in nested object with replacer function', function (assert) {
+  const serializer = stringify.configure({ safe: true })
+
+  const replacer = (key, value) => {
+    return value
+  }
+  const obj = { a: 1, b: 2, c: { toJSON () { throw new Error('Oops') } } }
+  const expected = '{\n "a": 1,\n "b": 2,\n "c": "Error: Stringification failed with toJSON (Oops)"\n}'
+  const actual = serializer(obj, replacer, 1)
+  assert.equal(actual, expected)
+
+  assert.end()
+})
+
+test('safe mode safeguards against failing toJSON and a difficult to stringify error', function (assert) {
   const serializer = stringify.configure({ safe: true })
 
   // eslint-disable-next-line
   const obj = { b: 2, c: { a: true, toJSON () { throw { toString() { throw new Error('Yikes') } } } }, a: 1 }
-  const expected = '{\n "a": 1,\n "b": 2,\n "c": "Error: Stringification failed. Message: Failed"\n}'
+  const expected = '{\n "a": 1,\n "b": 2,\n "c": "Error: Stringification failed with toJSON (Failed)"\n}'
   const actual = serializer(obj, null, 1)
   assert.equal(actual, expected)
 
