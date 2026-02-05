@@ -51,6 +51,7 @@ function sort (array, comparator) {
 }
 
 const typedArrayPrototypeGetSymbolToStringTag =
+  // @ts-expect-error
   Object.getOwnPropertyDescriptor(
     Object.getPrototypeOf(
       Object.getPrototypeOf(
@@ -61,26 +62,27 @@ const typedArrayPrototypeGetSymbolToStringTag =
   ).get
 
 function isTypedArrayWithEntries (value) {
+  // @ts-expect-error
   return typedArrayPrototypeGetSymbolToStringTag.call(value) !== undefined && value.length !== 0
+}
+
+function wrapInQuotes (value) {
+  return `"${value}"`
 }
 
 function stringifyTypedArray (array, separator, maximumBreadth, bigint) {
   if (array.length < maximumBreadth) {
     maximumBreadth = array.length
   }
+  const method = bigint === 'string' && array.length > 0 && typeof array[0] === 'bigint'
+    ? wrapInQuotes
+    : String
   const whitespace = separator === ',' ? '' : ' '
-  let res = `"0":${whitespace}${formatTypedArrayValue(array[0], bigint)}`
+  let res = `"0":${whitespace}${method(array[0])}`
   for (let i = 1; i < maximumBreadth; i++) {
-    res += `${separator}"${i}":${whitespace}${formatTypedArrayValue(array[i], bigint)}`
+    res += `${separator}"${i}":${whitespace}${method(array[i])}`
   }
   return res
-}
-
-function formatTypedArrayValue (value, bigint) {
-  if (typeof value === 'bigint' && bigint === 'string') {
-    return strEscape(String(value))
-  }
-  return String(value)
 }
 
 function getCircularValueOption (options) {
@@ -353,10 +355,10 @@ function configure (options) {
       case 'undefined':
         return undefined
       case 'bigint':
-        if (bigint === 'string') {
-          return strEscape(String(value))
-        }
         if (bigint) {
+          if (bigint === 'string') {
+            return `"${String(value)}"`
+          }
           return String(value)
         }
         // fallthrough
@@ -445,10 +447,10 @@ function configure (options) {
       case 'undefined':
         return undefined
       case 'bigint':
-        if (bigint === 'string') {
-          return strEscape(String(value))
-        }
         if (bigint) {
+          if (bigint === 'string') {
+            return `"${String(value)}"`
+          }
           return String(value)
         }
         // fallthrough
@@ -558,10 +560,10 @@ function configure (options) {
       case 'undefined':
         return undefined
       case 'bigint':
-        if (bigint === 'string') {
-          return strEscape(String(value))
-        }
         if (bigint) {
+          if (bigint === 'string') {
+            return `"${String(value)}"`
+          }
           return String(value)
         }
         // fallthrough
@@ -662,10 +664,10 @@ function configure (options) {
       case 'undefined':
         return undefined
       case 'bigint':
-        if (bigint === 'string') {
-          return strEscape(String(value))
-        }
         if (bigint) {
+          if (bigint === 'string') {
+            return `"${String(value)}"`
+          }
           return String(value)
         }
         // fallthrough

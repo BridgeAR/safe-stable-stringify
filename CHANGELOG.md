@@ -2,6 +2,19 @@
 
 ## Next
 
+- Added `'string'` as possible `bigint` option value. Bigint values are serialized as JSON strings using it.
+
+```js
+import { configure } from 'safe-stable-stringify'
+
+const stringify = configure({
+  bigint: 'string'
+})
+
+stringify([1n, 2, 3n, 4, 5n])
+// '["1",2,"3",4,"5"]'
+```
+
 - Fixed off by one error using the `maximumBreadth` option. It showed one entry to few being skipped.
 - Added `safe` option to not fail in case a getter, `.toJSON()`, or a replacer throws an error.
   Instead, a string as error message is replacing the object inspection. This allows to partially inspect such objects.
