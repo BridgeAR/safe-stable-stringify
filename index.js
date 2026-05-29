@@ -419,6 +419,9 @@ function configure (options) {
           stack.pop()
           return `[${res}]`
         }
+        if (maximumDepth < stack.length + 1) {
+          return '"[Object]"'
+        }
         stack.push(value)
         let whitespace = ''
         if (spacer !== '') {
