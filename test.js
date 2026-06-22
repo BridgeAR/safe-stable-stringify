@@ -773,6 +773,15 @@ test('maximum spacer length', function (assert) {
   assert.end()
 })
 
+test('negative spacer length', function (assert) {
+  const input = { a: 0 }
+  // A negative number means no indentation, same as JSON.stringify (not a throw).
+  assert.equal(stringify(input, null, -1), JSON.stringify(input, null, -1))
+  assert.equal(stringify(input, null, -1e5), JSON.stringify(input, null, -1e5))
+  assert.equal(stringify(input, null, -Infinity), JSON.stringify(input, null, -Infinity))
+  assert.end()
+})
+
 test('indent properly; regression test for issue #16', function (assert) {
   const o = {
     collections: {},

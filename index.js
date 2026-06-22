@@ -687,7 +687,7 @@ function configure (options) {
     if (arguments.length > 1) {
       let spacer = ''
       if (typeof space === 'number') {
-        spacer = ' '.repeat(Math.min(space, 10))
+        spacer = ' '.repeat(Math.max(0, Math.min(space, 10)))
       } else if (typeof space === 'string') {
         spacer = space.slice(0, 10)
       }
