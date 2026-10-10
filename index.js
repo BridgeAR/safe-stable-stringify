@@ -70,13 +70,15 @@ function wrapInQuotes (value) {
   return `"${value}"`
 }
 
-function stringifyTypedArray (array, separator, maximumBreadth, bigint) {
+function stringifyTypedArray (array, separator, maximumBreadth, bigint, fail) {
   if (array.length < maximumBreadth) {
     maximumBreadth = array.length
   }
   const method = bigint === 'string' && array.length > 0 && typeof array[0] === 'bigint'
     ? wrapInQuotes
-    : String
+    : (value) => typeof value === 'number' && !isFinite(value)
+        ? fail ? fail(value) : 'null'
+        : String(value)
   const whitespace = separator === ',' ? '' : ' '
   let res = `"0":${whitespace}${method(array[0])}`
   for (let i = 1; i < maximumBreadth; i++) {
@@ -525,7 +527,7 @@ function configure (options) {
         let separator = ''
         let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
         if (isTypedArrayWithEntries(value)) {
-          res += stringifyTypedArray(value, join, maximumBreadth, bigint)
+          res += stringifyTypedArray(value, join, maximumBreadth, bigint, fail)
           keys = keys.slice(value.length)
           maximumPropertiesToStringify -= value.length
           separator = join
@@ -633,7 +635,7 @@ function configure (options) {
         let separator = ''
         let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
         if (hasLength && isTypedArrayWithEntries(value)) {
-          res += stringifyTypedArray(value, ',', maximumBreadth, bigint)
+          res += stringifyTypedArray(value, ',', maximumBreadth, bigint, fail)
           keys = keys.slice(value.length)
           maximumPropertiesToStringify -= value.length
           separator = ','
