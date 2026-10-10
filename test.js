@@ -3,6 +3,19 @@ const { stringify } = require('./index.js')
 const clone = require('clone')
 const { constants: { MAX_STRING_LENGTH } } = require('buffer')
 
+test('non-finite floating typed arrays produce valid JSON', (assert) => {
+  for (const TypedArray of [Float32Array, Float64Array]) {
+    const value = { metrics: new TypedArray([NaN, Infinity, -Infinity, 1]) }
+    for (const space of [undefined, 2]) {
+      assert.equal(stringify(value, null, space), JSON.stringify(value, null, space))
+      assert.throws(() => stringify.configure({ strict: true })(value, null, space), {
+        message: 'Object can not safely be stringified. Received type number (NaN)'
+      })
+    }
+  }
+  assert.end()
+})
+
 /**
  * @param {string} key
  * @param {unknown} value
