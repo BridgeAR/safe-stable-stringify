@@ -1,6 +1,7 @@
 **/*
 !index.d.ts
 !index.js
+!wrapper.cjs
 !LICENSE
 !package.json
 !esm/*

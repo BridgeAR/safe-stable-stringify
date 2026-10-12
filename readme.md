@@ -8,6 +8,11 @@ Gracefully handles circular structures and bigint instead of throwing.
 Optional custom circular values, deterministic behavior or strict JSON
 compatibility check.
 
+The ESM default export and the CommonJS export are the same function.
+Imports and `require()` calls can be used together in either order.
+Copies of the same package version share their export through a retained
+global symbol. Different versions use separate symbols.
+
 ## stringify(value[, replacer[, space]])
 
 The same as [JSON.stringify][].

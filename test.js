@@ -1,5 +1,5 @@
 const { test } = require('tap')
-const { stringify } = require('./index.js')
+const { stringify } = require('./wrapper.cjs')
 const clone = require('clone')
 const { constants: { MAX_STRING_LENGTH } } = require('buffer')
 const { runInNewContext } = require('vm')
@@ -84,7 +84,7 @@ function identityReplacer (key, value) {
 
 /**
  * @param {import('tap').Test} assert
- * @param {typeof stringify} serializer
+ * @param {ReturnType<typeof stringify.configure>} serializer
  * @param {object} value
  * @param {object} expected
  * @param {string[]} keys

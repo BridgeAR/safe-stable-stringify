@@ -2,6 +2,9 @@
 
 ## Next
 
+- Require Node.js 18 or later.
+- Use ESM and CommonJS wrappers that share an export through a version-specific global symbol.
+
 - Changed the default circular marker to `'[Circular: N]'`, where `N` is the referenced ancestor's depth, starting at 0 for the root.
   Set `circularValue: '[Circular]'` to retain the previous format. This changes the serialized output for circular references.
 

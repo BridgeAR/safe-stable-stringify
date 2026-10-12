@@ -1,6 +1,9 @@
-import cjsModule from '../index.js'
+import '../index.js'
 
-export const configure = cjsModule.configure
+const sharedGlobal = /** @type {Record<symbol, typeof import('../index.js').default>} */ (
+  globalThis
+)
 
-export const stringify = cjsModule
-export default cjsModule
+export const stringify = sharedGlobal[Symbol.for('safe-stable-stringify@3.0.0')]
+export const configure = stringify.configure
+export default stringify
