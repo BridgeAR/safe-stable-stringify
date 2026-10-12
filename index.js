@@ -85,6 +85,12 @@ function stringifyTypedArray (array, separator, maximumBreadth, bigint) {
   return res
 }
 
+/** @param {number} index */
+function stringifyCircularDepth (index) {
+  return `"[Circular: ${index}]"`
+}
+
+/** @param {Record<string, unknown>} options */
 function getCircularValueOption (options) {
   if (hasOwnProperty.call(options, 'circularValue')) {
     const circularValue = options.circularValue
@@ -103,7 +109,7 @@ function getCircularValueOption (options) {
     }
     throw new TypeError('The "circularValue" argument must be of type string or the value null or undefined')
   }
-  return '"[Circular]"'
+  return stringifyCircularDepth
 }
 
 function getDeterministicOption (options) {
@@ -268,8 +274,9 @@ function configure (options) {
         if (value === null) {
           return 'null'
         }
-        if (stack.indexOf(value) !== -1) {
-          return circularValue
+        const circularIndex = stack.indexOf(value)
+        if (circularIndex !== -1) {
+          return typeof circularValue === 'function' ? circularValue(circularIndex) : circularValue
         }
 
         let res = ''
@@ -379,8 +386,9 @@ function configure (options) {
         if (value === null) {
           return 'null'
         }
-        if (stack.indexOf(value) !== -1) {
-          return circularValue
+        const circularIndex = stack.indexOf(value)
+        if (circularIndex !== -1) {
+          return typeof circularValue === 'function' ? circularValue(circularIndex) : circularValue
         }
 
         const originalIndentation = indentation
@@ -480,8 +488,9 @@ function configure (options) {
             return 'null'
           }
         }
-        if (stack.indexOf(value) !== -1) {
-          return circularValue
+        const circularIndex = stack.indexOf(value)
+        if (circularIndex !== -1) {
+          return typeof circularValue === 'function' ? circularValue(circularIndex) : circularValue
         }
         const originalIndentation = indentation
 
@@ -593,8 +602,9 @@ function configure (options) {
             return 'null'
           }
         }
-        if (stack.indexOf(value) !== -1) {
-          return circularValue
+        const circularIndex = stack.indexOf(value)
+        if (circularIndex !== -1) {
+          return typeof circularValue === 'function' ? circularValue(circularIndex) : circularValue
         }
 
         let res = ''

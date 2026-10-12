@@ -2,6 +2,9 @@
 
 ## Next
 
+- Changed the default circular marker to `'[Circular: N]'`, where `N` is the referenced ancestor's depth, starting at 0 for the root.
+  Set `circularValue: '[Circular]'` to retain the previous format. This changes the serialized output for circular references.
+
 - Added `'string'` as possible `bigint` option value. Bigint values are serialized as JSON strings using it.
 
 ```js
