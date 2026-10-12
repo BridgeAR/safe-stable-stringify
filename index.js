@@ -76,9 +76,11 @@ function stringifyTypedArray (array, separator, maximumBreadth, bigint, fail) {
   }
   const method = bigint === 'string' && array.length > 0 && typeof array[0] === 'bigint'
     ? wrapInQuotes
-    : (value) => typeof value === 'number' && !isFinite(value)
-        ? fail ? fail(value) : 'null'
-        : String(value)
+    : typedArrayPrototypeGetSymbolToStringTag.call(array).startsWith('Float')
+      ? (value) => !isFinite(value)
+          ? fail ? fail(value) : 'null'
+          : String(value)
+      : String
   const whitespace = separator === ',' ? '' : ' '
   let res = `"0":${whitespace}${method(array[0])}`
   for (let i = 1; i < maximumBreadth; i++) {
