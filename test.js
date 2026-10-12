@@ -919,10 +919,16 @@ test('maximumDepth config', function (assert) {
   assert.equal(result, '{"a":{"a":"[Array]","b":"[Object]"}}')
 
   const res2 = serialize(obj, ['a', 'b'])
-  assert.equal(res2, '{"a":{"a":"[Array]","b":{}}}')
+  assert.equal(res2, '{"a":{"a":"[Array]","b":"[Object]"}}')
 
   const json = JSON.stringify(obj, ['a', 'b'])
   assert.equal(json, '{"a":{"a":[1,2,3],"b":{}}}')
+
+  const serializeDepth1 = stringify.configure({
+    maximumDepth: 1
+  })
+  const resDepth1 = serializeDepth1(obj, ['a', 'b'])
+  assert.equal(resDepth1, '{"a":"[Object]"}')
 
   const res3 = serialize(obj, null, 2)
   assert.equal(res3, `{
