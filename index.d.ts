@@ -6,6 +6,7 @@ export function stringify(value: unknown, replacer?: ((key: string, value: unkno
 
 export interface StringifyOptions {
   bigint?: boolean | 'string',
+  /** Defaults to '[Circular: N]', where N is the ancestor depth, starting at 0 for the root. */
   circularValue?: string | null | TypeErrorConstructor | ErrorConstructor,
   deterministic?: boolean | ((a: string, b: string) => number),
   maximumBreadth?: number,

@@ -31,7 +31,7 @@ const circular = { b: 1, a: 0 }
 circular.circular = circular
 
 stringify(circular)
-// '{"a":0,"b":1,"circular":"[Circular]"}'
+// '{"a":0,"b":1,"circular":"[Circular: 0]"}'
 JSON.stringify(circular)
 // TypeError: Converting circular structure to JSON
 
@@ -50,7 +50,9 @@ stringify(circular, ['a', 'b'], 2)
 * `circularValue` {string|null|undefined|ErrorConstructor} Defines the value for
   circular references. Set to `undefined`, circular properties are not
   serialized (array entries are replaced with `null`). Set to `Error`, to throw
-  on circular references. **Default:** `'[Circular]'`.
+  on circular references. **Default:** `'[Circular: N]'`, where `N` is the
+  referenced ancestor's depth, starting at 0 for the root. Set to `'[Circular]'`
+  to retain the previous default format.
 * `deterministic` {boolean|function} If `true` or a `Array#sort(comparator)`
   comparator method, guarantee a deterministic key order instead of relying on
   the insertion order. **Default:** `true`.
@@ -113,7 +115,8 @@ throwOnCircular(circular);
 
 ## Differences to JSON.stringify
 
-1. _Circular values_ are replaced with the string `[Circular]` (configurable).
+1. _Circular values_ identify the referenced ancestor's depth as `[Circular: N]`
+   (configurable), starting at 0 for the root.
 1. _Object keys_ are sorted instead of using the insertion order (configurable).
 1. _BigInt_ values are stringified as regular number instead of throwing a
    TypeError (configurable).
