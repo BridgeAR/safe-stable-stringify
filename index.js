@@ -61,25 +61,43 @@ const typedArrayPrototypeGetSymbolToStringTag =
     Symbol.toStringTag
   ).get
 
-function isTypedArrayWithEntries (value) {
+/** @param {object & {length?: unknown}} value */
+function getTypedArrayType (value) {
   // @ts-expect-error
-  return typedArrayPrototypeGetSymbolToStringTag.call(value) !== undefined && value.length !== 0
+  const type = typedArrayPrototypeGetSymbolToStringTag.call(value)
+  return type !== undefined && value.length !== 0 ? type : undefined
 }
 
+/** @param {number | bigint} value */
 function wrapInQuotes (value) {
   return `"${value}"`
 }
 
-function stringifyTypedArray (array, separator, maximumBreadth, bigint, fail) {
+/**
+ * @param {ArrayLike<number | bigint>} array
+ * @param {string} separator
+ * @param {number} maximumBreadth
+ * @param {boolean | 'string'} bigint
+ * @param {((value: number | bigint) => never) | undefined} fail
+ * @param {string} type
+ */
+function stringifyTypedArray (array, separator, maximumBreadth, bigint, fail, type) {
   if (array.length < maximumBreadth) {
     maximumBreadth = array.length
   }
+  const whitespace = separator === ',' ? '' : ' '
+  if (type[0] === 'F') {
+    let value = array[0]
+    let res = `"0":${whitespace}${Number.isFinite(value) ? value : fail ? fail(value) : 'null'}`
+    for (let i = 1; i < maximumBreadth; i++) {
+      value = array[i]
+      res += `${separator}"${i}":${whitespace}${Number.isFinite(value) ? value : fail ? fail(value) : 'null'}`
+    }
+    return res
+  }
   const method = bigint === 'string' && array.length > 0 && typeof array[0] === 'bigint'
     ? wrapInQuotes
-    : (value) => typeof value === 'number' && !isFinite(value)
-        ? fail ? fail(value) : 'null'
-        : String(value)
-  const whitespace = separator === ',' ? '' : ' '
+    : String
   let res = `"0":${whitespace}${method(array[0])}`
   for (let i = 1; i < maximumBreadth; i++) {
     res += `${separator}"${i}":${whitespace}${method(array[i])}`
@@ -334,7 +352,7 @@ function configure (options) {
           whitespace = ' '
         }
         const maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
-        if (deterministic && !isTypedArrayWithEntries(value)) {
+        if (deterministic && getTypedArrayType(value) === undefined) {
           keys = sort(keys, comparator)
         }
         stack.push(value)
@@ -538,8 +556,9 @@ function configure (options) {
         let res = ''
         let separator = ''
         let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
-        if (isTypedArrayWithEntries(value)) {
-          res += stringifyTypedArray(value, join, maximumBreadth, bigint, fail)
+        const typedArrayType = getTypedArrayType(value)
+        if (typedArrayType !== undefined) {
+          res += stringifyTypedArray(value, join, maximumBreadth, bigint, fail, typedArrayType)
           keys = keys.slice(value.length)
           maximumPropertiesToStringify -= value.length
           separator = join
@@ -647,8 +666,9 @@ function configure (options) {
         }
         let separator = ''
         let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
-        if (hasLength && isTypedArrayWithEntries(value)) {
-          res += stringifyTypedArray(value, ',', maximumBreadth, bigint, fail)
+        const typedArrayType = hasLength ? getTypedArrayType(value) : undefined
+        if (typedArrayType !== undefined) {
+          res += stringifyTypedArray(value, ',', maximumBreadth, bigint, fail, typedArrayType)
           keys = keys.slice(value.length)
           maximumPropertiesToStringify -= value.length
           separator = ','

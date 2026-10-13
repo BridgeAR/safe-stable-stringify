@@ -2,19 +2,77 @@ const { test } = require('tap')
 const { stringify } = require('./index.js')
 const clone = require('clone')
 const { constants: { MAX_STRING_LENGTH } } = require('buffer')
+const { runInNewContext } = require('vm')
 
-test('non-finite floating typed arrays produce valid JSON', (assert) => {
-  for (const TypedArray of [Float32Array, Float64Array]) {
-    const value = { metrics: new TypedArray([NaN, Infinity, -Infinity, 1]) }
-    for (const space of [undefined, 2]) {
-      assert.equal(stringify(value, null, space), JSON.stringify(value, null, space))
-      assert.throws(() => stringify.configure({ strict: true })(value, null, space), {
-        message: 'Object can not safely be stringified. Received type number (NaN)'
-      })
+for (const name of ['Float16Array', 'Float32Array', 'Float64Array']) {
+  const TypedArray = globalThis[/** @type {'Float16Array' | 'Float32Array' | 'Float64Array'} */ (name)]
+  test(`${name} serializes non-finite values`, { skip: TypedArray === undefined },
+    /** @param {import('tap').Test} assert */
+    (assert) => {
+      const strict = stringify.configure({ strict: true })
+      for (const space of [undefined, 2]) {
+        for (const number of [NaN, Infinity, -Infinity]) {
+          for (const values of [[number, 1], [1, number]]) {
+            const value = { metrics: new TypedArray(values) }
+            assert.equal(stringify(value, null, space), JSON.stringify(value, null, space))
+            assert.throws(() => strict(value, null, space), {
+              message: `Object can not safely be stringified. Received type number (${number})`
+            })
+          }
+        }
+        const finite = new TypedArray([-0, 1.5, -2])
+        assert.equal(strict(finite, null, space), JSON.stringify(finite, null, space))
+        const empty = new TypedArray(0)
+        assert.equal(strict(empty, null, space), JSON.stringify(empty, null, space))
+        const limited = stringify.configure({ strict: true, maximumBreadth: 1 })
+        assert.equal(limited(new TypedArray([1, NaN]), null, space),
+          JSON.stringify({ 0: 1, '...': '1 item not stringified' }, null, space))
+      }
+      assert.end()
+    })
+}
+
+test('floating typed arrays retain their intrinsic type',
+  /** @param {import('tap').Test} assert */
+  (assert) => {
+    class FloatSubclass extends Float32Array {}
+    const foreign = runInNewContext('new Float64Array([1, Infinity])')
+    const subclass = new FloatSubclass([1, -Infinity])
+    const disguised = new Float32Array([1, NaN])
+    Object.defineProperties(disguised, {
+      constructor: { value: Int32Array },
+      [Symbol.toStringTag]: { value: 'Int32Array' }
+    })
+    for (const value of [foreign, subclass, disguised]) {
+      for (const space of [undefined, 2]) {
+        assert.equal(stringify(value, null, space), JSON.stringify(value, null, space))
+      }
     }
-  }
-  assert.end()
-})
+    assert.end()
+  })
+
+test('integer and bigint typed arrays retain their formatting',
+  /** @param {import('tap').Test} assert */
+  (assert) => {
+    for (const TypedArray of [Int8Array, Uint8Array, Uint8ClampedArray, Int16Array,
+      Uint16Array, Int32Array, Uint32Array]) {
+      const value = new TypedArray([0, 1, 2])
+      for (const space of [undefined, 2]) {
+        assert.equal(stringify(value, null, space), JSON.stringify(value, null, space))
+      }
+    }
+    for (const TypedArray of [BigInt64Array, BigUint64Array]) {
+      const value = new TypedArray([0n, 1n, 2n])
+      for (const bigint of /** @type {const} */ ([true, 'string'])) {
+        const serialize = stringify.configure({ bigint })
+        const expected = bigint === 'string' ? { 0: '0', 1: '1', 2: '2' } : { 0: 0, 1: 1, 2: 2 }
+        for (const space of [undefined, 2]) {
+          assert.equal(serialize(value, null, space), JSON.stringify(expected, null, space))
+        }
+      }
+    }
+    assert.end()
+  })
 
 /**
  * @param {string} key
