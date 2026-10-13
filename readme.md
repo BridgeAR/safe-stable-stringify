@@ -48,7 +48,9 @@ stringify(circular, ['a', 'b'], 2)
   number. If set to `'string'`, bigint values are serialized as JSON strings.
   Otherwise they are ignored. **Default:** `true`.
 * `circularValue` {string|null|undefined|ErrorConstructor} Defines the value for
-  circular references. Set to `undefined`, circular properties are not
+  circular references. String values are wrapped in double quotes without JSON
+  escaping. Escape JSON special characters in the value to keep the output valid
+  JSON. Set to `undefined`, circular properties are not
   serialized (array entries are replaced with `null`). Set to `Error`, to throw
   on circular references. **Default:** `'[Circular: N]'`, where `N` is the
   referenced ancestor's depth, starting at 0 for the root. Set to `'[Circular]'`
