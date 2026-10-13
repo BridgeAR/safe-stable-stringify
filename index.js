@@ -4,23 +4,6 @@ const { hasOwnProperty } = Object.prototype
 
 /** @typedef {{toJSON: (key: string) => unknown}} ToJSON */
 
-const stringify = configure()
-
-// @ts-expect-error
-stringify.configure = configure
-// @ts-expect-error
-stringify.stringify = stringify
-
-// @ts-expect-error
-stringify.default = stringify
-
-// @ts-expect-error used for named export
-exports.stringify = stringify
-// @ts-expect-error used for named export
-exports.configure = configure
-
-module.exports = stringify
-
 // eslint-disable-next-line no-control-regex
 const strEscapeSequencesRegExp = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]/
 
@@ -778,4 +761,25 @@ function configure (options) {
   }
 
   return stringify
+}
+
+const sharedGlobal = /** @type {Record<symbol, typeof import('./index.js').default | undefined>} */ (
+  globalThis
+)
+const exportSymbol = Symbol.for('safe-stable-stringify@3.0.0')
+
+if (sharedGlobal[exportSymbol] === undefined) {
+  const stringify = configure()
+  // @ts-expect-error
+  stringify.configure = configure
+  // @ts-expect-error
+  stringify.stringify = stringify
+  // @ts-expect-error
+  stringify.default = stringify
+  Object.defineProperty(sharedGlobal, exportSymbol, {
+    configurable: true,
+    enumerable: false,
+    value: /** @type {typeof import('./index.js').default} */ (stringify),
+    writable: true
+  })
 }

@@ -1,24 +1,28 @@
-export type Replacer = (number | string)[] | null | undefined | ((key: string, value: unknown) => string | number | boolean | null | object)
-
-export function stringify(value: undefined | symbol | ((...args: unknown[]) => unknown), replacer?: Replacer, space?: string | number): undefined
-export function stringify(value: string | number | unknown[] | null | boolean | object, replacer?: Replacer, space?: string | number): string
-export function stringify(value: unknown, replacer?: ((key: string, value: unknown) => unknown) | (number | string)[] | null | undefined, space?: string | number): string | undefined
-
-export interface StringifyOptions {
-  bigint?: boolean | 'string',
-  /** Defaults to '[Circular: N]', where N is the ancestor depth, starting at 0 for the root. */
-  circularValue?: string | null | TypeErrorConstructor | ErrorConstructor,
-  deterministic?: boolean | ((a: string, b: string) => number),
-  maximumBreadth?: number,
-  maximumDepth?: number,
-  strict?: boolean,
-  safe?: boolean,
+interface StringifyFunction {
+  (value: undefined | symbol | ((...args: unknown[]) => unknown), replacer?: stringify.Replacer, space?: string | number): undefined
+  (value: string | number | unknown[] | null | boolean | object, replacer?: stringify.Replacer, space?: string | number): string
+  (value: unknown, replacer?: ((key: string, value: unknown) => unknown) | (number | string)[] | null | undefined, space?: string | number): string | undefined
 }
 
-export namespace stringify {
-  export function configure(options: StringifyOptions): typeof stringify
+declare const stringify: StringifyFunction & {
+  configure(options: stringify.StringifyOptions): StringifyFunction
+  stringify: typeof stringify
+  default: typeof stringify
 }
 
-export function configure(options: StringifyOptions): typeof stringify
+declare namespace stringify {
+  export type Replacer = (number | string)[] | null | undefined | ((key: string, value: unknown) => string | number | boolean | null | object)
 
-export default stringify
+  export interface StringifyOptions {
+    bigint?: boolean | 'string',
+    /** Defaults to '[Circular: N]', where N is the ancestor depth, starting at 0 for the root. */
+    circularValue?: string | null | TypeErrorConstructor | ErrorConstructor,
+    deterministic?: boolean | ((a: string, b: string) => number),
+    maximumBreadth?: number,
+    maximumDepth?: number,
+    strict?: boolean,
+    safe?: boolean,
+  }
+}
+
+export = stringify
