@@ -262,13 +262,16 @@ test('toJSON receives array keys as string', /** @param {import('tap').Test} ass
 })
 
 test('compact primitive arrays preserve special values and fallback behavior', /** @param {import('tap').Test} assert */ (assert) => {
-  const values = [0, -0, 1.5, NaN, Infinity, -Infinity, '', 'text', '\n"\\', '\ud800', null, undefined, true, false, { value: 42 }]
+  const values = [0, -0, 1.5, NaN, Infinity, -Infinity, '', 'text', '\n"\\', '\ud800', null, undefined, true, false, Symbol('value'), () => {}, { value: 42 }]
   for (const safe of [false, true]) {
     const serializer = stringify.configure({ safe })
     for (const value of values) {
       assert.equal(serializer([value, value]), JSON.stringify([value, value]))
       assert.equal(serializer([value]), JSON.stringify([value]))
+      const wrapped = { toJSON () { return value } }
+      assert.equal(serializer([wrapped, wrapped]), JSON.stringify([wrapped, wrapped]))
     }
+    assert.equal(serializer(new Array(2)), '[null,null]')
   }
   const strictSerializer = stringify.configure({ strict: true })
   for (const value of [NaN, Infinity, -Infinity]) {
@@ -279,6 +282,52 @@ test('compact primitive arrays preserve special values and fallback behavior', /
   const longString = 'a'.repeat(MAX_STRING_LENGTH)
   assert.equal(safeSerializer([longString]), '["Error: Stringification failed (Invalid string length)"]')
   assert.equal(safeSerializer([longString, 0]), '["Error: Stringification failed (Invalid string length)",0]')
+  assert.end()
+})
+
+test('compact primitive arrays retain safe strict failures and bigint options', /** @param {import('tap').Test} assert */ (assert) => {
+  const unsupported = /** @type {[number | symbol | (() => void), string][]} */ ([
+    [NaN, 'number (NaN)'],
+    [Infinity, 'number (Infinity)'],
+    [-Infinity, 'number (-Infinity)'],
+    [Symbol('value'), 'symbol (Symbol(value))'],
+    [() => {}, 'function']
+  ])
+  const strict = stringify.configure({ strict: true })
+  const safeStrict = stringify.configure({ strict: true, safe: true })
+  for (const [value, description] of unsupported) {
+    assert.throws(() => strict([value, 0]), /Object can not safely be stringified/)
+    assert.throws(() => strict([0, value]), /Object can not safely be stringified/)
+    const message = `"Error: Stringification failed (Object can not safely be stringified. Received type ${description})"`
+    assert.equal(safeStrict([value, 0]), `[${message},0]`)
+    assert.equal(safeStrict([0, value]), `[0,${message}]`)
+  }
+  assert.equal(safeStrict([undefined, undefined]), '[null,null]')
+  for (const bigint of /** @type {import('./index').StringifyOptions['bigint'][]} */ ([true, false, 'string'])) {
+    for (const safe of [false, true]) {
+      for (const strict of [false, true]) {
+        const serializer = stringify.configure({ bigint, safe, strict })
+        if (strict && !bigint && !safe) {
+          assert.throws(() => serializer([1n, 0]), /Received type bigint \(1\)/)
+          assert.throws(() => serializer([0, 1n]), /Received type bigint \(1\)/)
+        } else {
+          const expected = bigint === 'string'
+            ? '"1"'
+            : bigint
+              ? '1'
+              : strict
+                ? '"Error: Stringification failed (Object can not safely be stringified. Received type bigint (1))"'
+                : 'null'
+          assert.equal(serializer([1n, 0]), `[${expected},0]`)
+          assert.equal(serializer([0, 1n]), `[0,${expected}]`)
+        }
+      }
+    }
+  }
+  const serializer = stringify.configure({ safe: true })
+  const failing = { get value () { throw new Error('Oops') } }
+  assert.equal(serializer([failing, 0]), '["Error: Stringification failed (Oops)",0]')
+  assert.equal(serializer([0, failing]), '[0,"Error: Stringification failed (Oops)"]')
   assert.end()
 })
 

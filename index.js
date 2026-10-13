@@ -615,117 +615,11 @@ function configure (options) {
     }
   }
 
-  /**
-   * @param {string | number} key
-   * @param {unknown} value
-   * @param {object[]} stack
-   */
-  let stringifySimple = function (key, value, stack) {
+  /** @param {string | number | boolean | bigint | symbol | undefined | Function} value */
+  let stringifyPrimitive = function (value) {
     switch (typeof value) {
       case 'string':
         return strEscape(value)
-      case 'object': {
-        if (value === null) {
-          return 'null'
-        }
-        if (typeof /** @type {ToJSON} */ (value).toJSON === 'function') {
-          if (typeof key === 'number') key = String(key)
-          value = safe ? callSafe(/** @type {ToJSON} */ (value).toJSON, value, key) : /** @type {ToJSON} */ (value).toJSON(key)
-          // Prevent calling `toJSON` again
-          if (typeof value !== 'object') {
-            return stringifySimple(key, value, stack)
-          }
-          if (value === null) {
-            return 'null'
-          }
-        }
-        const circularIndex = stack.indexOf(value)
-        if (circularIndex !== -1) {
-          return typeof circularValue === 'function' ? circularValue(circularIndex) : circularValue
-        }
-
-        let res = ''
-
-        const hasLength = /** @type {{length?: unknown}} */ (value).length !== undefined
-        if (hasLength && Array.isArray(value)) {
-          if (value.length === 0) {
-            return '[]'
-          }
-          if (maximumDepth < stack.length + 1) {
-            return '"[Array]"'
-          }
-          stack.push(value)
-          const maximumValuesToStringify = Math.min(value.length, maximumBreadth)
-          let i = 0
-          for (; i < maximumValuesToStringify - 1; i++) {
-            const item = value[i]
-            const tmp = safe
-              ? stringifySimple(i, item, stack)
-              : typeof item === 'string'
-                ? strEscape(item)
-                : typeof item === 'number' && isFinite(item)
-                  ? String(item)
-                  : typeof item === 'boolean'
-                    ? item === true ? 'true' : 'false'
-                    : stringifySimple(i, item, stack)
-            res += tmp !== undefined ? tmp : 'null'
-            res += ','
-          }
-          const item = value[i]
-          const tmp = safe
-            ? stringifySimple(i, item, stack)
-            : typeof item === 'string'
-              ? strEscape(item)
-              : typeof item === 'number' && isFinite(item)
-                ? String(item)
-                : typeof item === 'boolean'
-                  ? item === true ? 'true' : 'false'
-                  : stringifySimple(i, item, stack)
-          res += tmp !== undefined ? tmp : 'null'
-          if (value.length > maximumBreadth) {
-            const removedKeys = value.length - maximumBreadth
-            res += `,"... ${getItemCount(removedKeys)} not stringified"`
-          }
-          stack.pop()
-          return `[${res}]`
-        }
-
-        let keys = Object.keys(value)
-        const keyLength = keys.length
-        if (keyLength === 0) {
-          return '{}'
-        }
-        if (maximumDepth < stack.length + 1) {
-          return '"[Object]"'
-        }
-        let separator = ''
-        let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
-        const typedArrayType = hasLength ? getTypedArrayType(value) : undefined
-        if (typedArrayType !== undefined) {
-          res += stringifyTypedArray(/** @type {ArrayLike<number | bigint>} */ (value), ',', maximumBreadth, bigint, fail, typedArrayType)
-          keys = keys.slice(/** @type {{length: number}} */ (value).length)
-          maximumPropertiesToStringify -= /** @type {{length: number}} */ (value).length
-          separator = ','
-        }
-        if (deterministic) {
-          keys = sort(keys, comparator)
-        }
-        stack.push(value)
-        for (let i = 0; i < maximumPropertiesToStringify; i++) {
-          const key = keys[i]
-          const tmp = stringifySimple(key, /** @type {Record<string, unknown>} */ (value)[key], stack)
-          if (tmp !== undefined) {
-            res += `${separator}${strEscape(key)}:${tmp}`
-            separator = ','
-          }
-        }
-        if (keyLength > maximumBreadth) {
-          const removedKeys = keyLength - maximumBreadth
-          res += `${separator}"...":"${getItemCount(removedKeys)} not stringified"`
-        }
-        stack.pop()
-        return `{${res}}`
-      }
       case 'number':
         return isFinite(value) ? String(value) : fail ? fail(value) : 'null'
       case 'boolean':
@@ -745,13 +639,119 @@ function configure (options) {
     }
   }
 
+  /**
+   * @param {string | number} key
+   * @param {object | null} value
+   * @param {object[]} stack
+   */
+  let stringifyObject = function (key, value, stack) {
+    if (value === null) {
+      return 'null'
+    }
+    if (typeof /** @type {ToJSON} */ (value).toJSON === 'function') {
+      if (typeof key === 'number') key = String(key)
+      const jsonValue = safe ? callSafe(/** @type {ToJSON} */ (value).toJSON, value, key) : /** @type {ToJSON} */ (value).toJSON(key)
+      // Prevent calling `toJSON` again
+      if (typeof jsonValue !== 'object') {
+        return stringifyPrimitive(jsonValue)
+      }
+      if (jsonValue === null) {
+        return 'null'
+      }
+      value = jsonValue
+    }
+    const circularIndex = stack.indexOf(value)
+    if (circularIndex !== -1) {
+      return typeof circularValue === 'function' ? circularValue(circularIndex) : circularValue
+    }
+
+    let res = ''
+
+    const hasLength = /** @type {{length?: unknown}} */ (value).length !== undefined
+    if (hasLength && Array.isArray(value)) {
+      if (value.length === 0) {
+        return '[]'
+      }
+      if (maximumDepth < stack.length + 1) {
+        return '"[Array]"'
+      }
+      stack.push(value)
+      const maximumValuesToStringify = Math.min(value.length, maximumBreadth)
+      let i = 0
+      for (; i < maximumValuesToStringify - 1; i++) {
+        const item = value[i]
+        const tmp = typeof item === 'object'
+          ? stringifyObject(i, item, stack)
+          : stringifyPrimitive(item)
+        res += tmp !== undefined ? tmp : 'null'
+        res += ','
+      }
+      const item = value[i]
+      const tmp = typeof item === 'object'
+        ? stringifyObject(i, item, stack)
+        : stringifyPrimitive(item)
+      res += tmp !== undefined ? tmp : 'null'
+      if (value.length > maximumBreadth) {
+        const removedKeys = value.length - maximumBreadth
+        res += `,"... ${getItemCount(removedKeys)} not stringified"`
+      }
+      stack.pop()
+      return `[${res}]`
+    }
+
+    let keys = Object.keys(value)
+    const keyLength = keys.length
+    if (keyLength === 0) {
+      return '{}'
+    }
+    if (maximumDepth < stack.length + 1) {
+      return '"[Object]"'
+    }
+    let separator = ''
+    let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
+    const typedArrayType = hasLength ? getTypedArrayType(value) : undefined
+    if (typedArrayType !== undefined) {
+      res += stringifyTypedArray(/** @type {ArrayLike<number | bigint>} */ (value), ',', maximumBreadth, bigint, fail, typedArrayType)
+      keys = keys.slice(/** @type {{length: number}} */ (value).length)
+      maximumPropertiesToStringify -= /** @type {{length: number}} */ (value).length
+      separator = ','
+    }
+    if (deterministic) {
+      keys = sort(keys, comparator)
+    }
+    stack.push(value)
+    for (let i = 0; i < maximumPropertiesToStringify; i++) {
+      const key = keys[i]
+      const item = /** @type {Record<string, unknown>} */ (value)[key]
+      const tmp = typeof item === 'object'
+        ? stringifyObject(key, item, stack)
+        : stringifyPrimitive(item)
+      if (tmp !== undefined) {
+        res += `${separator}${strEscape(key)}:${tmp}`
+        separator = ','
+      }
+    }
+    if (keyLength > maximumBreadth) {
+      const removedKeys = keyLength - maximumBreadth
+      res += `${separator}"...":"${getItemCount(removedKeys)} not stringified"`
+    }
+    stack.pop()
+    return `{${res}}`
+  }
+
   if (safe) {
     stringifyFnReplacer = makeSafe(stringifyFnReplacer)
     stringifyArrayReplacer = makeSafe(stringifyArrayReplacer)
     stringifyIndent = makeSafe(stringifyIndent)
-    stringifySimple = makeSafe(stringifySimple)
+    stringifyObject = makeSafe(stringifyObject)
+    stringifyPrimitive = makeSafe(stringifyPrimitive)
   }
 
+  /**
+   * @param {unknown} value
+   * @param {import('./index').Replacer} [replacer]
+   * @param {string | number} [space]
+   */
   function stringify (value, replacer, space) {
     if (arguments.length > 1) {
       let spacer = ''
@@ -775,7 +775,9 @@ function configure (options) {
         return stringifyIndent('', value, [], spacer, '')
       }
     }
-    return stringifySimple('', value, [])
+    return typeof value === 'object'
+      ? stringifyObject('', value, [])
+      : stringifyPrimitive(value)
   }
 
   return stringify
