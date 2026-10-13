@@ -977,23 +977,16 @@ test('check small typed arrays with extra properties', function (assert) {
   assert.end()
 })
 
-test('trigger sorting fast path for objects with lots of properties', function (assert) {
+test('sort objects with lots of properties', /** @param {import('tap').Test} assert */ function (assert) {
   const keys = []
   const obj = {}
-  for (let i = 0; i < 1e4; i++) {
+  for (let i = 1e4; i > 0; i--) {
     obj[`a${i}`] = i
     keys.push(`a${i}`)
   }
 
-  const start = Date.now()
-
-  stringify(obj)
-  assert.ok(Date.now() - start < 100)
-  const now = Date.now()
-  const actualTime = now - start
   keys.sort()
-  const expectedTime = Date.now() - now
-  assert.ok(Math.abs(actualTime - expectedTime) < 50)
+  assert.equal(stringify(obj), JSON.stringify(obj, keys))
   assert.end()
 })
 

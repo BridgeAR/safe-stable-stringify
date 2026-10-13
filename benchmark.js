@@ -6,6 +6,10 @@ const stringify = require('.').configure({ deterministic: true })
 
 const array = Array.from({ length: 10 }, (_, i) => i)
 const obj = { array }
+const largeObj = {}
+for (let i = 1e4; i > 0; i--) {
+  largeObj[`a${i}`] = i
+}
 const circ = JSON.parse(JSON.stringify(obj))
 circ.o = { obj: circ, array }
 
@@ -24,6 +28,9 @@ deepCirc.array = array
 // One arg "simple"
 suite.add('simple:   simple object', function () {
   stringify(obj)
+})
+suite.add('simple:   10k properties', function () {
+  stringify(largeObj)
 })
 suite.add('simple:   circular     ', function () {
   stringify(circ)
