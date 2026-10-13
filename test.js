@@ -1611,6 +1611,26 @@ test('deterministic default sorting', function (assert) {
   assert.end()
 })
 
+test('deterministic sorting preserves keys across insertion and native sort boundaries', /** @param {import('tap').Test} assert */ (assert) => {
+  for (const size of [8, 9, 31, 32, 33, 34, 199, 200, 201]) {
+    const keys = Array.from({ length: size }, /** @param {unknown} value @param {number} index */ (value, index) => `key${String(index).padStart(3, '0')}`)
+    const adjacent = keys.slice()
+    ;[adjacent[1], adjacent[2]] = [adjacent[2], adjacent[1]]
+    for (const order of [keys, keys.slice().reverse(), adjacent, [keys[size - 1], ...keys.slice(0, -1)]]) {
+      const value = {}
+      const expected = {}
+      for (const key of order) value[key] = key
+      for (const key of keys) expected[key] = key
+      for (const replacer of [undefined, identityReplacer]) {
+        for (const space of [undefined, 2]) {
+          assert.equal(stringify({ nested: value }, replacer, space), JSON.stringify({ nested: expected }, null, space))
+        }
+      }
+    }
+  }
+  assert.end()
+})
+
 test('deterministic custom sorting', function (assert) {
   // Descending
   const serializer = stringify.configure({ deterministic: (a, b) => b.localeCompare(a) })
