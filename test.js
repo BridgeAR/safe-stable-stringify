@@ -217,29 +217,47 @@ test('circular depths can have multiple digits', /** @param {import('tap').Test}
   assert.end()
 })
 
-test('toJSON receives array keys as string', function (assert) {
-  const object = [{
-    toJSON (key) {
-      assert.equal(key, '0')
-      return 42
+test('toJSON receives array keys as string', /** @param {import('tap').Test} assert */ (assert) => {
+  for (const safe of [false, true]) {
+    const serializer = stringify.configure({ safe })
+    for (const replacer of [undefined, identityReplacer, ['nested']]) {
+      for (const space of [undefined, 2]) {
+        const keys = []
+        const array = new Array(1001)
+        for (const index of [0, 10, 1000]) {
+          array[index] = {
+            /** @param {string} key */
+            toJSON (key) {
+              keys.push(key)
+              return index
+            }
+          }
+        }
+        array[1] = {
+          /** @param {string} key */
+          toJSON (key) {
+            keys.push(key)
+            return {
+              nested: [{
+                /** @param {string} key */
+                toJSON (key) {
+                  keys.push(key)
+                  return null
+                }
+              }]
+            }
+          }
+        }
+        const expected = new Array(1001)
+        expected[0] = 0
+        expected[1] = { nested: [null] }
+        expected[10] = 10
+        expected[1000] = 1000
+        assert.equal(serializer(array, replacer, space), JSON.stringify(expected, null, space))
+        assert.strictSame(keys, ['0', '1', '0', '10', '1000'])
+      }
     }
-  }]
-
-  const expected = JSON.stringify(object)
-
-  let actual = stringify(object)
-  assert.equal(actual, expected)
-
-  actual = stringify(object, ['0'])
-  assert.equal(actual, expected)
-
-  // @ts-expect-error
-  actual = stringify(object, (key, value) => value)
-  assert.equal(actual, expected)
-
-  actual = stringify(object, null, 2)
-  assert.equal(actual, '[\n  42\n]')
-
+  }
   assert.end()
 })
 
@@ -800,8 +818,10 @@ test('bigint option as string', function (assert) {
   assert.end()
 })
 
-test('bigint option invalid values', function (assert) {
+test('bigint option invalid values', /** @param {import('tap').Test} assert */ function (assert) {
+  // @ts-expect-error
   assert.throws(() => stringify.configure({ bigint: 'nope' }), /bigint/)
+  // @ts-expect-error
   assert.throws(() => stringify.configure({ bigint: 1 }), /bigint/)
   assert.end()
 })
@@ -1613,7 +1633,8 @@ test('safe option defaults and explicit false', function (assert) {
   assert.end()
 })
 
-test('safe option must be boolean', function (assert) {
+test('safe option must be boolean', /** @param {import('tap').Test} assert */ function (assert) {
+  // @ts-expect-error
   assert.throws(() => stringify.configure({ safe: 'yes' }), /safe/)
   assert.end()
 })
