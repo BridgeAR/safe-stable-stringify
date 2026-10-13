@@ -4,6 +4,57 @@ const clone = require('clone')
 const { constants: { MAX_STRING_LENGTH } } = require('buffer')
 const { runInNewContext } = require('vm')
 
+test('escaping preserves output across runtime and string length boundaries', (assert) => {
+  const paths = [require.resolve('./index.js'), require.resolve('.')]
+  const cached = paths.map(path => require.cache[path])
+  const nativeProcess = globalThis.process
+  const exportSymbol = Symbol.for('safe-stable-stringify@3.0.0')
+  const descriptor = /** @type {PropertyDescriptor} */ (Object.getOwnPropertyDescriptor(globalThis, exportSymbol))
+  for (const process of [undefined, null, {}, { versions: {} }, { versions: { node: '21.0.0' } }, { versions: { node: '22.0.0' } }]) {
+    let serializer
+    try {
+      // @ts-expect-error
+      globalThis.process = process
+      for (const path of paths) delete require.cache[path]
+      delete globalThis[exportSymbol]
+      serializer = require('.')
+    } finally {
+      globalThis.process = nativeProcess
+      Object.defineProperty(globalThis, exportSymbol, descriptor)
+      for (let i = 0; i < paths.length; i++) require.cache[paths[i]] = cached[i]
+    }
+    for (const length of [0, 31, 32, 127, 128, 4999, 5000]) {
+      const original = JSON.stringify
+      let calls = 0
+      try {
+        JSON.stringify = value => {
+          calls++
+          return original(value)
+        }
+        const value = 'x'.repeat(length)
+        const output = serializer(value)
+        const threshold = process?.versions?.node === '22.0.0' ? 128 : 5000
+        assert.equal(calls, length >= threshold ? 1 : 0, 'native escaping follows the runtime threshold')
+        assert.equal(output, original(value))
+      } finally {
+        JSON.stringify = original
+      }
+      for (const ending of ['', '"', '\\', '\n', '\ud800', '\udfff', '\ud83d\ude00', '\u0100']) {
+        const value = 'x'.repeat(Math.max(0, length - ending.length)) + ending
+        for (const input of [value, [value], { [value]: value }]) {
+          for (const replacer of [null, (_, value) => value, [value]]) {
+            for (const space of [undefined, 2]) {
+              // @ts-expect-error
+              assert.equal(serializer(input, replacer, space), JSON.stringify(input, replacer, space))
+            }
+          }
+        }
+      }
+    }
+  }
+  assert.end()
+})
+
 for (const name of ['Float16Array', 'Float32Array', 'Float64Array']) {
   const TypedArray = globalThis[/** @type {'Float16Array' | 'Float32Array' | 'Float64Array'} */ (name)]
   test(`${name} serializes non-finite values`, { skip: TypedArray === undefined },
@@ -343,17 +394,19 @@ test('primitive failures and bigint options retain their behavior in every mode'
   assert.end()
 })
 
-test('primitive roots still read array replacer entries', (assert) => {
+test('array replacer entries are processed for every root type', (assert) => {
   for (const safe of [false, true]) {
     const serializer = stringify.configure({ safe })
-    for (const value of [1, 'text', true, null, undefined]) {
-      let reads = 0
-      const replacer = ['value']
-      Object.defineProperty(replacer, 0, { get () { reads++; return 'value' } })
-      assert.equal(serializer(value, replacer), JSON.stringify(value))
-      assert.equal(reads, 1)
-      Object.defineProperty(replacer, 0, { get () { throw new Error('Oops') } })
-      assert.throws(() => serializer(value, replacer), /Oops/)
+    for (const value of [{ value: 1 }, [1], null, 1, 1n, 'text', true, undefined, Symbol('test'), () => {}]) {
+      for (const space of [undefined, 2]) {
+        let reads = 0
+        const replacer = ['value']
+        Object.defineProperty(replacer, 0, { get () { reads++; return 'value' } })
+        assert.equal(serializer(value, replacer, space), value === 1n ? '1' : JSON.stringify(value, null, space))
+        assert.equal(reads, 1)
+        Object.defineProperty(replacer, 0, { get () { throw new Error('Oops') } })
+        assert.throws(() => serializer(value, replacer, space), /Oops/)
+      }
     }
   }
   assert.end()

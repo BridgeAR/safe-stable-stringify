@@ -1,7 +1,8 @@
 'use strict'
 
-const Benchmark = require('bench-node')
-const suite = new Benchmark.Suite()
+const assert = require('node:assert/strict')
+
+const runBenchmarks = require('./benchmark-utils')
 const testData = require('./test.json')
 
 const stringifyPackages = {
@@ -16,7 +17,9 @@ const stringifyPackages = {
   'safe-stable-stringify': require('.')
 }
 
-for (const name in stringifyPackages) {
+const cases = []
+const expected = require('.')(testData)
+for (const name of Object.keys(stringifyPackages)) {
   let fn
   if (typeof stringifyPackages[name] === 'function') {
     fn = stringifyPackages[name]
@@ -26,9 +29,8 @@ for (const name in stringifyPackages) {
     fn = require(name)
   }
 
-  suite.add(name, function () {
-    fn(testData)
-  })
+  assert.equal(fn(testData), expected)
+  cases.push([name, () => fn(testData)])
 }
 
-suite.run()
+runBenchmarks(cases, 2)

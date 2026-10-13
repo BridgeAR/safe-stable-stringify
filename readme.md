@@ -124,55 +124,93 @@ throwOnCircular(circular);
    TypeError (configurable).
 1. _Boxed primitives_ (e.g., `Number(5)`) are not unboxed and are handled as
    regular object.
+1. _Array replacers_ use the array iterator and accept only primitive strings
+   and numbers. Boxed entries are ignored.
 
-Those are the only differences to `JSON.stringify()`. This is a side effect free
-variant and [`toJSON`][], [`replacer`][] and the [`spacer`][] work the same as
-with `JSON.stringify()`.
+Array replacer entries are processed for every input, including primitive roots.
+Getters and iterator errors still propagate. Object [`toJSON`][] methods,
+function [`replacer`][] callbacks, and the [`spacer`][] are supported.
 
 ## Performance / Benchmarks
 
-Currently this is by far the fastest known stable (deterministic) stringify
-implementation. This is especially important for big objects and TypedArrays.
+Measured on an Apple M4 Max with macOS 26.6.2, Node.js 26.3.1
+(V8 14.6.202.34-node.20), and bench-node 0.15.0.
 
-(Dell Precision 5540, i7-9850H CPU @ 2.60GHz, Node.js 16.11.1)
+Each case has 50,000 warmup calls and seven two-second trials. Results use the
+mean of the middle five trials. The coefficient of variation (CV) uses all seven
+trials. Runs with a CV of 3% or more fail. Every call consumes the output length.
+The local measurements use foreground scheduling with `taskpolicy -a -t 0 -l 0`.
 
-```md
-simple:   simple object x 3,463,894 ops/sec ±0.44% (98 runs sampled)
-simple:   circular      x 1,236,007 ops/sec ±0.46% (99 runs sampled)
-simple:   deep          x 18,942 ops/sec ±0.41% (93 runs sampled)
-simple:   deep circular x 18,690 ops/sec ±0.72% (96 runs sampled)
+Results from `npm run benchmark`:
 
-replacer:   simple object x 2,664,940 ops/sec ±0.31% (98 runs sampled)
-replacer:   circular      x 1,015,981 ops/sec ±0.09% (99 runs sampled)
-replacer:   deep          x 17,328 ops/sec ±0.38% (97 runs sampled)
-replacer:   deep circular x 17,071 ops/sec ±0.21% (98 runs sampled)
-
-array:   simple object x 3,869,608 ops/sec ±0.22% (98 runs sampled)
-array:   circular      x 3,853,943 ops/sec ±0.45% (96 runs sampled)
-array:   deep          x 3,563,227 ops/sec ±0.20% (100 runs sampled)
-array:   deep circular x 3,286,475 ops/sec ±0.07% (100 runs sampled)
-
-indentation:   simple object x 2,183,162 ops/sec ±0.66% (97 runs sampled)
-indentation:   circular      x 872,538 ops/sec ±0.57% (98 runs sampled)
-indentation:   deep          x 16,795 ops/sec ±0.48% (93 runs sampled)
-indentation:   deep circular x 16,443 ops/sec ±0.40% (97 runs sampled)
+```text
+Apple M4 Max; Node v26.3.1; V8 14.6.202.34-node.20
+simple: simple object              4,426,655 ops/sec (7 runs, CV 1.52%)
+simple: circular                   1,922,646 ops/sec (7 runs, CV 0.89%)
+simple: deep                       32,526 ops/sec (7 runs, CV 1.04%)
+simple: deep circular              32,078 ops/sec (7 runs, CV 1.11%)
+replacer: simple object            2,916,534 ops/sec (7 runs, CV 2.19%)
+replacer: circular                 1,318,356 ops/sec (7 runs, CV 0.59%)
+replacer: deep                     29,330 ops/sec (7 runs, CV 0.94%)
+replacer: deep circular            28,905 ops/sec (7 runs, CV 1.22%)
+array: simple object               4,546,824 ops/sec (7 runs, CV 0.61%)
+array: circular                    4,527,065 ops/sec (7 runs, CV 0.59%)
+array: deep                        4,515,301 ops/sec (7 runs, CV 0.63%)
+array: deep circular               4,531,107 ops/sec (7 runs, CV 0.24%)
+full replacer: simple object       2,716,387 ops/sec (7 runs, CV 0.51%)
+full replacer: circular            1,248,523 ops/sec (7 runs, CV 0.42%)
+full replacer: deep                28,407 ops/sec (7 runs, CV 1.30%)
+full replacer: deep circular       28,199 ops/sec (7 runs, CV 1.58%)
+full array: simple object          3,929,918 ops/sec (7 runs, CV 0.88%)
+full array: circular               3,925,238 ops/sec (7 runs, CV 1.10%)
+full array: deep                   3,922,968 ops/sec (7 runs, CV 1.03%)
+full array: deep circular          3,938,466 ops/sec (7 runs, CV 0.47%)
+indentation: simple object         4,141,014 ops/sec (7 runs, CV 0.60%)
+indentation: circular              1,832,771 ops/sec (7 runs, CV 0.78%)
+indentation: deep                  32,191 ops/sec (7 runs, CV 1.42%)
+indentation: deep circular         32,207 ops/sec (7 runs, CV 1.97%)
+Output checksum: 28135
 ```
 
-Comparing `safe-stable-stringify` with known alternatives:
+Results from `npm run compare`:
 
-```md
-fast-json-stable-stringify x 18,765 ops/sec ±0.71% (94 runs sampled)
-json-stable-stringify x 13,870 ops/sec ±0.72% (94 runs sampled)
-fast-stable-stringify x 21,343 ops/sec ±0.33% (95 runs sampled)
-faster-stable-stringify x 17,707 ops/sec ±0.44% (97 runs sampled)
-json-stringify-deterministic x 11,208 ops/sec ±0.57% (98 runs sampled)
-fast-safe-stringify x 21,460 ops/sec ±0.75% (99 runs sampled)
-this x 30,367 ops/sec ±0.39% (96 runs sampled)
+The `fast-safe-stringify` comparison uses its stable implementation.
 
-The fastest is this
+```text
+Apple M4 Max; Node v26.3.1; V8 14.6.202.34-node.20
+fastest-stable-stringify           74,695 ops/sec (7 runs, CV 0.71%)
+fast-json-stable-stringify         67,631 ops/sec (7 runs, CV 0.85%)
+json-stable-stringify              51,077 ops/sec (7 runs, CV 0.54%)
+fast-stable-stringify              73,214 ops/sec (7 runs, CV 0.52%)
+faster-stable-stringify            64,848 ops/sec (7 runs, CV 1.16%)
+json-stringify-deterministic       45,526 ops/sec (7 runs, CV 0.93%)
+fast-safe-stringify                57,828 ops/sec (7 runs, CV 0.58%)
+safe-stable-stringify              76,684 ops/sec (7 runs, CV 0.45%)
+Output checksum: 5423
 ```
 
-The `fast-safe-stringify` comparison uses the modules stable implementation.
+The following comparison uses main (`c05878f`) and this implementation with the
+same dependencies, fixtures, and benchmark harness:
+
+| Implementation | Before, ops/sec | After, ops/sec |
+| --- | ---: | ---: |
+| fastest-stable-stringify | 73,969 | 74,695 |
+| fast-json-stable-stringify | 67,489 | 67,631 |
+| json-stable-stringify | 51,367 | 51,077 |
+| fast-stable-stringify | 73,933 | 73,214 |
+| faster-stable-stringify | 65,571 | 64,848 |
+| json-stringify-deterministic | 45,792 | 45,526 |
+| fast-safe-stringify | 58,717 | 57,828 |
+| safe-stable-stringify | 68,305 | 76,684 |
+
+The comparison fixture improves by 12.3%. A second fresh process
+pair measures 67,996 → 73,143 ops/sec
+(7.6%). These results describe this fixture and runtime. They do not
+establish a fastest implementation for every input or feature set.
+
+Some deep-object cases are slower. The largest decline in the full benchmark
+is 3.1%. CV measures variation within one process. Results can also vary
+between fresh processes.
 
 ## Acknowledgements
 

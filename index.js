@@ -6,12 +6,13 @@ const { hasOwnProperty } = Object.prototype
 
 // eslint-disable-next-line no-control-regex
 const strEscapeSequencesRegExp = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]/
+const strEscapeLength = typeof process === 'object' && Number(process?.versions?.node?.split('.')[0]) >= 22 ? 128 : 5000
 
 // Escape C0 control characters, double quotes, the backslash and every code
 // unit with a numeric value in the inclusive range 0xD800 to 0xDFFF.
 function strEscape (str) {
-  // Some magic numbers that worked out fine while benchmarking with v8 8.0
-  if (str.length < 5000 && !strEscapeSequencesRegExp.test(str)) {
+  // Native escaping is faster for longer strings on Node.js 22 and later.
+  if (str.length < strEscapeLength && !strEscapeSequencesRegExp.test(str)) {
     return `"${str}"`
   }
   return JSON.stringify(str)
@@ -31,6 +32,9 @@ function sort (array, comparator) {
   for (let i = 1; i < array.length; i++) {
     const currentValue = array[i]
     if (array[i - 1] <= currentValue) continue
+    if (i === 1 && array.length > 32 && currentValue > array[array.length - 1]) {
+      return array.sort()
+    }
     let position = i
     do {
       array[position] = array[position - 1]
@@ -365,7 +369,7 @@ function configure (options) {
       stack.pop()
       return `{${res}}`
     }
-    return stringifyPrimitive(value)
+    return stringifyFnPrimitive(value)
   }
 
   /**
@@ -384,7 +388,7 @@ function configure (options) {
       if (typeof key === 'number') key = String(key)
       const jsonValue = safe ? callSafe(/** @type {ToJSON} */ (value).toJSON, value, key) : /** @type {ToJSON} */ (value).toJSON(key)
       if (typeof jsonValue !== 'object') {
-        return stringifyPrimitiveSafe(jsonValue)
+        return stringifyPrimitive(jsonValue)
       }
       if (jsonValue === null) {
         return 'null'
@@ -417,12 +421,12 @@ function configure (options) {
       let i = 0
       for (; i < maximumValuesToStringify - 1; i++) {
         const item = value[i]
-        const tmp = typeof item === 'object' ? stringifyArrayReplacer(i, item, stack, replacer, spacer, indentation) : stringifyPrimitiveSafe(item)
+        const tmp = typeof item === 'object' ? stringifyArrayReplacer(i, item, stack, replacer, spacer, indentation) : stringifyPrimitive(item)
         res += tmp !== undefined ? tmp : 'null'
         res += join
       }
       const item = value[i]
-      const tmp = typeof item === 'object' ? stringifyArrayReplacer(i, item, stack, replacer, spacer, indentation) : stringifyPrimitiveSafe(item)
+      const tmp = typeof item === 'object' ? stringifyArrayReplacer(i, item, stack, replacer, spacer, indentation) : stringifyPrimitive(item)
       res += tmp !== undefined ? tmp : 'null'
       if (value.length > maximumBreadth) {
         const removedKeys = value.length - maximumBreadth
@@ -447,7 +451,7 @@ function configure (options) {
     let separator = ''
     for (const key of replacer) {
       const item = /** @type {Record<string, unknown>} */ (value)[key]
-      const tmp = typeof item === 'object' ? stringifyArrayReplacer(key, item, stack, replacer, spacer, indentation) : stringifyPrimitiveSafe(item)
+      const tmp = typeof item === 'object' ? stringifyArrayReplacer(key, item, stack, replacer, spacer, indentation) : stringifyPrimitive(item)
       if (tmp !== undefined) {
         res += `${separator}${strEscape(key)}:${whitespace}${tmp}`
         separator = join
@@ -475,7 +479,7 @@ function configure (options) {
       if (typeof key === 'number') key = String(key)
       const jsonValue = safe ? callSafe(/** @type {ToJSON} */ (value).toJSON, value, key) : /** @type {ToJSON} */ (value).toJSON(key)
       if (typeof jsonValue !== 'object') {
-        return stringifyPrimitiveSafe(jsonValue)
+        return stringifyPrimitive(jsonValue)
       }
       if (jsonValue === null) {
         return 'null'
@@ -503,12 +507,12 @@ function configure (options) {
       let i = 0
       for (; i < maximumValuesToStringify - 1; i++) {
         const item = value[i]
-        const tmp = typeof item === 'object' ? stringifyIndent(i, item, stack, spacer, indentation) : stringifyPrimitiveSafe(item)
+        const tmp = typeof item === 'object' ? stringifyIndent(i, item, stack, spacer, indentation) : stringifyPrimitive(item)
         res += tmp !== undefined ? tmp : 'null'
         res += join
       }
       const item = value[i]
-      const tmp = typeof item === 'object' ? stringifyIndent(i, item, stack, spacer, indentation) : stringifyPrimitiveSafe(item)
+      const tmp = typeof item === 'object' ? stringifyIndent(i, item, stack, spacer, indentation) : stringifyPrimitive(item)
       res += tmp !== undefined ? tmp : 'null'
       if (value.length > maximumBreadth) {
         const removedKeys = value.length - maximumBreadth
@@ -546,7 +550,7 @@ function configure (options) {
     for (let i = 0; i < maximumPropertiesToStringify; i++) {
       const key = keys[i]
       const item = /** @type {Record<string, unknown>} */ (value)[key]
-      const tmp = typeof item === 'object' ? stringifyIndent(key, item, stack, spacer, indentation) : stringifyPrimitiveSafe(item)
+      const tmp = typeof item === 'object' ? stringifyIndent(key, item, stack, spacer, indentation) : stringifyPrimitive(item)
       if (tmp !== undefined) {
         res += `${separator}${strEscape(key)}: ${tmp}`
         separator = join
@@ -564,7 +568,7 @@ function configure (options) {
     return `{${res}}`
   }
 
-  function stringifyPrimitive (value) {
+  let stringifyPrimitive = function (value) {
     switch (typeof value) {
       case 'string':
         return strEscape(value)
@@ -596,7 +600,7 @@ function configure (options) {
       const jsonValue = safe ? callSafe(/** @type {ToJSON} */ (value).toJSON, value, key) : /** @type {ToJSON} */ (value).toJSON(key)
       // Prevent calling `toJSON` again
       if (typeof jsonValue !== 'object') {
-        return stringifyPrimitiveSafe(jsonValue)
+        return stringifyPrimitive(jsonValue)
       }
       if (jsonValue === null) {
         return 'null'
@@ -625,14 +629,14 @@ function configure (options) {
         const item = value[i]
         const tmp = typeof item === 'object'
           ? stringifyObject(i, item, stack)
-          : stringifyPrimitiveSafe(item)
+          : stringifyPrimitive(item)
         res += tmp !== undefined ? tmp : 'null'
         res += ','
       }
       const item = value[i]
       const tmp = typeof item === 'object'
         ? stringifyObject(i, item, stack)
-        : stringifyPrimitiveSafe(item)
+        : stringifyPrimitive(item)
       res += tmp !== undefined ? tmp : 'null'
       if (value.length > maximumBreadth) {
         const removedKeys = value.length - maximumBreadth
@@ -668,7 +672,7 @@ function configure (options) {
       const item = /** @type {Record<string, unknown>} */ (value)[key]
       const tmp = typeof item === 'object'
         ? stringifyObject(key, item, stack)
-        : stringifyPrimitiveSafe(item)
+        : stringifyPrimitive(item)
       if (tmp !== undefined) {
         res += `${separator}${strEscape(key)}:${tmp}`
         separator = ','
@@ -682,13 +686,13 @@ function configure (options) {
     return `{${res}}`
   }
 
-  let stringifyPrimitiveSafe = stringifyPrimitive
+  const stringifyFnPrimitive = stringifyPrimitive
   if (safe) {
     stringifyFnReplacer = makeSafe(stringifyFnReplacer)
     stringifyArrayReplacer = makeSafe(stringifyArrayReplacer)
     stringifyIndent = makeSafe(stringifyIndent)
     stringifyObject = makeSafe(stringifyObject)
-    stringifyPrimitiveSafe = makeSafe(stringifyPrimitive)
+    stringifyPrimitive = makeSafe(stringifyPrimitive)
   }
 
   function stringify (value, replacer, space) {
@@ -710,18 +714,18 @@ function configure (options) {
           const keys = getUniqueReplacerSet(replacer)
           return typeof value === 'object'
             ? stringifyArrayReplacer('', value, [], keys, spacer, '')
-            : stringifyPrimitiveSafe(value)
+            : stringifyPrimitive(value)
         }
       }
       if (spacer.length !== 0) {
         return typeof value === 'object'
           ? stringifyIndent('', value, [], spacer, '')
-          : stringifyPrimitiveSafe(value)
+          : stringifyPrimitive(value)
       }
     }
     return typeof value === 'object'
       ? stringifyObject('', value, [])
-      : stringifyPrimitiveSafe(value)
+      : stringifyPrimitive(value)
   }
 
   return stringify
