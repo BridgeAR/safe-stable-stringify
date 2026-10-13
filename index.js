@@ -32,20 +32,28 @@ function strEscape (str) {
   return JSON.stringify(str)
 }
 
+/**
+ * @param {string[]} array
+ * @param {(a: string, b: string) => number} [comparator]
+ */
 function sort (array, comparator) {
   // Insertion sort is very efficient for small input sizes, but it has a bad
   // worst case complexity. Thus, use native array sort for bigger values.
   if (array.length > 2e2 || comparator) {
     return array.sort(comparator)
   }
+  let moves = 0
   for (let i = 1; i < array.length; i++) {
     const currentValue = array[i]
+    if (array[i - 1] <= currentValue) continue
     let position = i
-    while (position !== 0 && array[position - 1] > currentValue) {
+    do {
       array[position] = array[position - 1]
       position--
-    }
+    } while (position !== 0 && array[position - 1] > currentValue)
     array[position] = currentValue
+    moves += i - position
+    if (moves > array.length && moves > 32) return array.sort()
   }
   return array
 }
