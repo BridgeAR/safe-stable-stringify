@@ -261,31 +261,37 @@ test('toJSON receives array keys as string', /** @param {import('tap').Test} ass
   assert.end()
 })
 
-test('compact primitive arrays preserve special values and fallback behavior', /** @param {import('tap').Test} assert */ (assert) => {
+test('primitive values preserve their formatting in every mode', (assert) => {
   const values = [0, -0, 1.5, NaN, Infinity, -Infinity, '', 'text', '\n"\\', '\ud800', null, undefined, true, false, Symbol('value'), () => {}, { value: 42 }]
   for (const safe of [false, true]) {
     const serializer = stringify.configure({ safe })
-    for (const value of values) {
-      assert.equal(serializer([value, value]), JSON.stringify([value, value]))
-      assert.equal(serializer([value]), JSON.stringify([value]))
-      const wrapped = { toJSON () { return value } }
-      assert.equal(serializer([wrapped, wrapped]), JSON.stringify([wrapped, wrapped]))
+    for (const replacer of [undefined, identityReplacer, ['value']]) {
+      for (const space of [undefined, 2]) {
+        for (const value of values) {
+          for (const input of [value, [value, value], [value], { value }]) {
+            assert.equal(serializer(input, replacer, space), JSON.stringify(input, null, space))
+          }
+          const wrapped = { toJSON () { return value } }
+          assert.equal(serializer([wrapped, wrapped], replacer, space), JSON.stringify([wrapped, wrapped], null, space))
+        }
+        assert.equal(serializer(new Array(2), replacer, space), JSON.stringify([null, null], null, space))
+      }
     }
-    assert.equal(serializer(new Array(2)), '[null,null]')
-  }
-  const strictSerializer = stringify.configure({ strict: true })
-  for (const value of [NaN, Infinity, -Infinity]) {
-    assert.throws(() => strictSerializer([value, 0]), { name: 'Error', message: `Object can not safely be stringified. Received type number (${value})` })
-    assert.throws(() => strictSerializer([0, value]), { name: 'Error', message: `Object can not safely be stringified. Received type number (${value})` })
   }
   const safeSerializer = stringify.configure({ safe: true })
   const longString = 'a'.repeat(MAX_STRING_LENGTH)
-  assert.equal(safeSerializer([longString]), '["Error: Stringification failed (Invalid string length)"]')
-  assert.equal(safeSerializer([longString, 0]), '["Error: Stringification failed (Invalid string length)",0]')
+  const message = 'Error: Stringification failed (Invalid string length)'
+  for (const replacer of [undefined, identityReplacer, ['value']]) {
+    for (const space of [undefined, 2]) {
+      assert.equal(safeSerializer([longString], replacer, space), JSON.stringify([message], null, space))
+      assert.equal(safeSerializer([longString, 0], replacer, space), JSON.stringify([message, 0], null, space))
+      assert.equal(safeSerializer([0, longString], replacer, space), JSON.stringify([0, message], null, space))
+    }
+  }
   assert.end()
 })
 
-test('compact primitive arrays retain safe strict failures and bigint options', /** @param {import('tap').Test} assert */ (assert) => {
+test('primitive failures and bigint options retain their behavior in every mode', (assert) => {
   const unsupported = /** @type {[number | symbol | (() => void), string][]} */ ([
     [NaN, 'number (NaN)'],
     [Infinity, 'number (Infinity)'],
@@ -295,39 +301,83 @@ test('compact primitive arrays retain safe strict failures and bigint options', 
   ])
   const strict = stringify.configure({ strict: true })
   const safeStrict = stringify.configure({ strict: true, safe: true })
-  for (const [value, description] of unsupported) {
-    assert.throws(() => strict([value, 0]), /Object can not safely be stringified/)
-    assert.throws(() => strict([0, value]), /Object can not safely be stringified/)
-    const message = `"Error: Stringification failed (Object can not safely be stringified. Received type ${description})"`
-    assert.equal(safeStrict([value, 0]), `[${message},0]`)
-    assert.equal(safeStrict([0, value]), `[0,${message}]`)
-  }
-  assert.equal(safeStrict([undefined, undefined]), '[null,null]')
-  for (const bigint of /** @type {import('./index').StringifyOptions['bigint'][]} */ ([true, false, 'string'])) {
-    for (const safe of [false, true]) {
-      for (const strict of [false, true]) {
-        const serializer = stringify.configure({ bigint, safe, strict })
-        if (strict && !bigint && !safe) {
-          assert.throws(() => serializer([1n, 0]), /Received type bigint \(1\)/)
-          assert.throws(() => serializer([0, 1n]), /Received type bigint \(1\)/)
-        } else {
-          const expected = bigint === 'string'
-            ? '"1"'
-            : bigint
-              ? '1'
-              : strict
-                ? '"Error: Stringification failed (Object can not safely be stringified. Received type bigint (1))"'
-                : 'null'
-          assert.equal(serializer([1n, 0]), `[${expected},0]`)
-          assert.equal(serializer([0, 1n]), `[0,${expected}]`)
-        }
-      }
-    }
-  }
   const serializer = stringify.configure({ safe: true })
   const failing = { get value () { throw new Error('Oops') } }
-  assert.equal(serializer([failing, 0]), '["Error: Stringification failed (Oops)",0]')
-  assert.equal(serializer([0, failing]), '[0,"Error: Stringification failed (Oops)"]')
+  for (const replacer of [undefined, identityReplacer, ['value']]) {
+    for (const space of [undefined, 2]) {
+      for (const [value, description] of unsupported) {
+        assert.throws(() => strict([value, 0], replacer, space), /Object can not safely be stringified/)
+        assert.throws(() => strict([0, value], replacer, space), /Object can not safely be stringified/)
+        const message = `Error: Stringification failed (Object can not safely be stringified. Received type ${description})`
+        assert.equal(safeStrict([value, 0], replacer, space), JSON.stringify([message, 0], null, space))
+        assert.equal(safeStrict([0, value], replacer, space), JSON.stringify([0, message], null, space))
+      }
+      assert.equal(safeStrict([undefined, undefined], replacer, space), JSON.stringify([null, null], null, space))
+      for (const bigint of /** @type {const} */ ([true, false, 'string'])) {
+        for (const safe of [false, true]) {
+          for (const strict of [false, true]) {
+            const serializer = stringify.configure({ bigint, safe, strict })
+            if (strict && !bigint && !safe) {
+              assert.throws(() => serializer([1n, 0], replacer, space), /Received type bigint \(1\)/)
+              assert.throws(() => serializer([0, 1n], replacer, space), /Received type bigint \(1\)/)
+            } else {
+              const expected = bigint === 'string'
+                ? '1'
+                : bigint
+                  ? 1
+                  : strict
+                    ? 'Error: Stringification failed (Object can not safely be stringified. Received type bigint (1))'
+                    : null
+              assert.equal(serializer([1n, 0], replacer, space), JSON.stringify([expected, 0], null, space))
+              assert.equal(serializer([0, 1n], replacer, space), JSON.stringify([0, expected], null, space))
+            }
+          }
+        }
+      }
+      const error = 'Error: Stringification failed (Oops)'
+      const expected = typeof replacer === 'function' ? { value: error } : error
+      assert.equal(serializer([failing, 0], replacer, space), JSON.stringify([expected, 0], null, space))
+      assert.equal(serializer([0, failing], replacer, space), JSON.stringify([0, expected], null, space))
+    }
+  }
+  assert.end()
+})
+
+test('primitive roots still read array replacer entries', (assert) => {
+  for (const safe of [false, true]) {
+    const serializer = stringify.configure({ safe })
+    for (const value of [1, 'text', true, null, undefined]) {
+      let reads = 0
+      const replacer = ['value']
+      Object.defineProperty(replacer, 0, { get () { reads++; return 'value' } })
+      assert.equal(serializer(value, replacer), JSON.stringify(value))
+      assert.equal(reads, 1)
+      Object.defineProperty(replacer, 0, { get () { throw new Error('Oops') } })
+      assert.throws(() => serializer(value, replacer), /Oops/)
+    }
+  }
+  assert.end()
+})
+
+test('function replacers run after toJSON and can change each input type', (assert) => {
+  for (const space of [undefined, 2]) {
+    const calls = []
+    const input = [{ toJSON (key) { calls.push(`toJSON:${key}`); return 1 } }, {}, undefined]
+    /** @this {object} */
+    function replacer (key, value) {
+      calls.push(`replacer:${key}`)
+      if (key === '0') {
+        assert.equal(this, input)
+        assert.equal(value, 1)
+        return { value }
+      }
+      if (key === '1') return false
+      if (key === '2') return 'filled'
+      return value
+    }
+    assert.equal(stringify(input, replacer, space), JSON.stringify([{ value: 1 }, false, 'filled'], null, space))
+    assert.strictSame(calls, ['replacer:', 'toJSON:0', 'replacer:0', 'replacer:value', 'replacer:1', 'replacer:2'])
+  }
   assert.end()
 })
 
