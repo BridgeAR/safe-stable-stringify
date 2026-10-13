@@ -776,5 +776,10 @@ if (sharedGlobal[exportSymbol] === undefined) {
   stringify.stringify = stringify
   // @ts-expect-error
   stringify.default = stringify
-  sharedGlobal[exportSymbol] = /** @type {typeof import('./index.js').default} */ (stringify)
+  Object.defineProperty(sharedGlobal, exportSymbol, {
+    configurable: true,
+    enumerable: false,
+    value: /** @type {typeof import('./index.js').default} */ (stringify),
+    writable: true
+  })
 }

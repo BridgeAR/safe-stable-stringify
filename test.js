@@ -1,5 +1,5 @@
 const { test } = require('tap')
-const { stringify } = require('./wrapper.cjs')
+const { stringify } = require('.')
 const clone = require('clone')
 const { constants: { MAX_STRING_LENGTH } } = require('buffer')
 const { runInNewContext } = require('vm')

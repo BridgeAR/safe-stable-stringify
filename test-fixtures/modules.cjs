@@ -21,6 +21,7 @@ async function check () {
   assert.notEqual(otherVersion, cjs)
   assert.equal(otherVersion({ b: 2, a: 1 }), '{"a":1,"b":2}')
   assert.equal(root[Symbol.for(`safe-stable-stringify@${version}`)], cjs)
+  assert.equal(Object.getOwnPropertyDescriptor(root, Symbol.for(`safe-stable-stringify@${version}`)).enumerable, false)
   assert.equal(cjs, esm.default)
   assert.equal(cjs, esm.stringify)
   assert.equal(cjs.configure, esm.configure)
