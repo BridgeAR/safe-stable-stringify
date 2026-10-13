@@ -261,6 +261,27 @@ test('toJSON receives array keys as string', /** @param {import('tap').Test} ass
   assert.end()
 })
 
+test('compact primitive arrays preserve special values and fallback behavior', /** @param {import('tap').Test} assert */ (assert) => {
+  const values = [0, -0, 1.5, NaN, Infinity, -Infinity, '', 'text', '\n"\\', '\ud800', null, undefined, true, false, { value: 42 }]
+  for (const safe of [false, true]) {
+    const serializer = stringify.configure({ safe })
+    for (const value of values) {
+      assert.equal(serializer([value, value]), JSON.stringify([value, value]))
+      assert.equal(serializer([value]), JSON.stringify([value]))
+    }
+  }
+  const strictSerializer = stringify.configure({ strict: true })
+  for (const value of [NaN, Infinity, -Infinity]) {
+    assert.throws(() => strictSerializer([value, 0]), { name: 'Error', message: `Object can not safely be stringified. Received type number (${value})` })
+    assert.throws(() => strictSerializer([0, value]), { name: 'Error', message: `Object can not safely be stringified. Received type number (${value})` })
+  }
+  const safeSerializer = stringify.configure({ safe: true })
+  const longString = 'a'.repeat(MAX_STRING_LENGTH)
+  assert.equal(safeSerializer([longString]), '["Error: Stringification failed (Invalid string length)"]')
+  assert.equal(safeSerializer([longString, 0]), '["Error: Stringification failed (Invalid string length)",0]')
+  assert.end()
+})
+
 test('circular reference to root', function (assert) {
   const fixture = { name: 'Tywin Lannister' }
   fixture.circle = fixture

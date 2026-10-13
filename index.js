@@ -658,11 +658,29 @@ function configure (options) {
           const maximumValuesToStringify = Math.min(value.length, maximumBreadth)
           let i = 0
           for (; i < maximumValuesToStringify - 1; i++) {
-            const tmp = stringifySimple(i, value[i], stack)
+            const item = value[i]
+            const tmp = safe
+              ? stringifySimple(i, item, stack)
+              : typeof item === 'string'
+                ? strEscape(item)
+                : typeof item === 'number' && isFinite(item)
+                  ? String(item)
+                  : typeof item === 'boolean'
+                    ? item === true ? 'true' : 'false'
+                    : stringifySimple(i, item, stack)
             res += tmp !== undefined ? tmp : 'null'
             res += ','
           }
-          const tmp = stringifySimple(i, value[i], stack)
+          const item = value[i]
+          const tmp = safe
+            ? stringifySimple(i, item, stack)
+            : typeof item === 'string'
+              ? strEscape(item)
+              : typeof item === 'number' && isFinite(item)
+                ? String(item)
+                : typeof item === 'boolean'
+                  ? item === true ? 'true' : 'false'
+                  : stringifySimple(i, item, stack)
           res += tmp !== undefined ? tmp : 'null'
           if (value.length > maximumBreadth) {
             const removedKeys = value.length - maximumBreadth
