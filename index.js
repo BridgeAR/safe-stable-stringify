@@ -2,6 +2,8 @@
 
 const { hasOwnProperty } = Object.prototype
 
+/** @typedef {{toJSON: (key: string) => unknown}} ToJSON */
+
 const stringify = configure()
 
 // @ts-expect-error
@@ -394,9 +396,18 @@ function configure (options) {
     }
   }
 
+  /**
+   * @param {string | number} key
+   * @param {unknown} value
+   * @param {object[]} stack
+   * @param {Set<string>} replacer
+   * @param {string} spacer
+   * @param {string} indentation
+   */
   let stringifyArrayReplacer = function (key, value, stack, replacer, spacer, indentation) {
-    if (typeof value === 'object' && value !== null && typeof value.toJSON === 'function') {
-      value = safe ? callSafe(value.toJSON, value, key) : value.toJSON(key)
+    if (typeof value === 'object' && value !== null && typeof /** @type {ToJSON} */ (value).toJSON === 'function') {
+      if (typeof key === 'number') key = String(key)
+      value = safe ? callSafe(/** @type {ToJSON} */ (value).toJSON, value, key) : /** @type {ToJSON} */ (value).toJSON(key)
     }
 
     switch (typeof value) {
@@ -431,11 +442,11 @@ function configure (options) {
           const maximumValuesToStringify = Math.min(value.length, maximumBreadth)
           let i = 0
           for (; i < maximumValuesToStringify - 1; i++) {
-            const tmp = stringifyArrayReplacer(String(i), value[i], stack, replacer, spacer, indentation)
+            const tmp = stringifyArrayReplacer(i, value[i], stack, replacer, spacer, indentation)
             res += tmp !== undefined ? tmp : 'null'
             res += join
           }
-          const tmp = stringifyArrayReplacer(String(i), value[i], stack, replacer, spacer, indentation)
+          const tmp = stringifyArrayReplacer(i, value[i], stack, replacer, spacer, indentation)
           res += tmp !== undefined ? tmp : 'null'
           if (value.length > maximumBreadth) {
             const removedKeys = value.length - maximumBreadth
@@ -459,7 +470,7 @@ function configure (options) {
         }
         let separator = ''
         for (const key of replacer) {
-          const tmp = stringifyArrayReplacer(key, value[key], stack, replacer, spacer, indentation)
+          const tmp = stringifyArrayReplacer(key, /** @type {Record<string, unknown>} */ (value)[key], stack, replacer, spacer, indentation)
           if (tmp !== undefined) {
             res += `${separator}${strEscape(key)}:${whitespace}${tmp}`
             separator = join
@@ -490,6 +501,13 @@ function configure (options) {
     }
   }
 
+  /**
+   * @param {string | number} key
+   * @param {unknown} value
+   * @param {object[]} stack
+   * @param {string} spacer
+   * @param {string} indentation
+   */
   let stringifyIndent = function (key, value, stack, spacer, indentation) {
     switch (typeof value) {
       case 'string':
@@ -498,8 +516,9 @@ function configure (options) {
         if (value === null) {
           return 'null'
         }
-        if (typeof value.toJSON === 'function') {
-          value = safe ? callSafe(value.toJSON, value, key) : value.toJSON(key)
+        if (typeof /** @type {ToJSON} */ (value).toJSON === 'function') {
+          if (typeof key === 'number') key = String(key)
+          value = safe ? callSafe(/** @type {ToJSON} */ (value).toJSON, value, key) : /** @type {ToJSON} */ (value).toJSON(key)
           // Prevent calling `toJSON` again.
           if (typeof value !== 'object') {
             return stringifyIndent(key, value, stack, spacer, indentation)
@@ -528,11 +547,11 @@ function configure (options) {
           const maximumValuesToStringify = Math.min(value.length, maximumBreadth)
           let i = 0
           for (; i < maximumValuesToStringify - 1; i++) {
-            const tmp = stringifyIndent(String(i), value[i], stack, spacer, indentation)
+            const tmp = stringifyIndent(i, value[i], stack, spacer, indentation)
             res += tmp !== undefined ? tmp : 'null'
             res += join
           }
-          const tmp = stringifyIndent(String(i), value[i], stack, spacer, indentation)
+          const tmp = stringifyIndent(i, value[i], stack, spacer, indentation)
           res += tmp !== undefined ? tmp : 'null'
           if (value.length > maximumBreadth) {
             const removedKeys = value.length - maximumBreadth
@@ -558,9 +577,9 @@ function configure (options) {
         let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
         const typedArrayType = getTypedArrayType(value)
         if (typedArrayType !== undefined) {
-          res += stringifyTypedArray(value, join, maximumBreadth, bigint, fail, typedArrayType)
-          keys = keys.slice(value.length)
-          maximumPropertiesToStringify -= value.length
+          res += stringifyTypedArray(/** @type {ArrayLike<number | bigint>} */ (value), join, maximumBreadth, bigint, fail, typedArrayType)
+          keys = keys.slice(/** @type {{length: number}} */ (value).length)
+          maximumPropertiesToStringify -= /** @type {{length: number}} */ (value).length
           separator = join
         }
         if (deterministic) {
@@ -569,7 +588,7 @@ function configure (options) {
         stack.push(value)
         for (let i = 0; i < maximumPropertiesToStringify; i++) {
           const key = keys[i]
-          const tmp = stringifyIndent(key, value[key], stack, spacer, indentation)
+          const tmp = stringifyIndent(key, /** @type {Record<string, unknown>} */ (value)[key], stack, spacer, indentation)
           if (tmp !== undefined) {
             res += `${separator}${strEscape(key)}: ${tmp}`
             separator = join
@@ -605,6 +624,11 @@ function configure (options) {
     }
   }
 
+  /**
+   * @param {string | number} key
+   * @param {unknown} value
+   * @param {object[]} stack
+   */
   let stringifySimple = function (key, value, stack) {
     switch (typeof value) {
       case 'string':
@@ -613,8 +637,9 @@ function configure (options) {
         if (value === null) {
           return 'null'
         }
-        if (typeof value.toJSON === 'function') {
-          value = safe ? callSafe(value.toJSON, value, key) : value.toJSON(key)
+        if (typeof /** @type {ToJSON} */ (value).toJSON === 'function') {
+          if (typeof key === 'number') key = String(key)
+          value = safe ? callSafe(/** @type {ToJSON} */ (value).toJSON, value, key) : /** @type {ToJSON} */ (value).toJSON(key)
           // Prevent calling `toJSON` again
           if (typeof value !== 'object') {
             return stringifySimple(key, value, stack)
@@ -630,7 +655,7 @@ function configure (options) {
 
         let res = ''
 
-        const hasLength = value.length !== undefined
+        const hasLength = /** @type {{length?: unknown}} */ (value).length !== undefined
         if (hasLength && Array.isArray(value)) {
           if (value.length === 0) {
             return '[]'
@@ -642,11 +667,11 @@ function configure (options) {
           const maximumValuesToStringify = Math.min(value.length, maximumBreadth)
           let i = 0
           for (; i < maximumValuesToStringify - 1; i++) {
-            const tmp = stringifySimple(String(i), value[i], stack)
+            const tmp = stringifySimple(i, value[i], stack)
             res += tmp !== undefined ? tmp : 'null'
             res += ','
           }
-          const tmp = stringifySimple(String(i), value[i], stack)
+          const tmp = stringifySimple(i, value[i], stack)
           res += tmp !== undefined ? tmp : 'null'
           if (value.length > maximumBreadth) {
             const removedKeys = value.length - maximumBreadth
@@ -668,9 +693,9 @@ function configure (options) {
         let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
         const typedArrayType = hasLength ? getTypedArrayType(value) : undefined
         if (typedArrayType !== undefined) {
-          res += stringifyTypedArray(value, ',', maximumBreadth, bigint, fail, typedArrayType)
-          keys = keys.slice(value.length)
-          maximumPropertiesToStringify -= value.length
+          res += stringifyTypedArray(/** @type {ArrayLike<number | bigint>} */ (value), ',', maximumBreadth, bigint, fail, typedArrayType)
+          keys = keys.slice(/** @type {{length: number}} */ (value).length)
+          maximumPropertiesToStringify -= /** @type {{length: number}} */ (value).length
           separator = ','
         }
         if (deterministic) {
@@ -679,7 +704,7 @@ function configure (options) {
         stack.push(value)
         for (let i = 0; i < maximumPropertiesToStringify; i++) {
           const key = keys[i]
-          const tmp = stringifySimple(key, value[key], stack)
+          const tmp = stringifySimple(key, /** @type {Record<string, unknown>} */ (value)[key], stack)
           if (tmp !== undefined) {
             res += `${separator}${strEscape(key)}:${tmp}`
             separator = ','
