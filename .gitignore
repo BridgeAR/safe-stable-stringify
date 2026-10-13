@@ -4,5 +4,6 @@ npm-debug.log
 yarn.lock
 coverage
 .nyc_output
+.tap/
 .vscode
 package-lock.json
