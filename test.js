@@ -329,15 +329,28 @@ test('primitive values preserve their formatting in every mode', (assert) => {
       }
     }
   }
-  const safeSerializer = stringify.configure({ safe: true })
-  const longString = 'a'.repeat(MAX_STRING_LENGTH)
+  assert.end()
+})
+
+test('primitive escaping failures preserve adjacent elements in every mode', (assert) => {
+  const serializer = stringify.configure({ safe: true })
+  const value = '\n'
+  const nativeStringify = JSON.stringify
   const message = 'Error: Stringification failed (Invalid string length)'
-  for (const replacer of [undefined, identityReplacer, ['value']]) {
-    for (const space of [undefined, 2]) {
-      assert.equal(safeSerializer([longString], replacer, space), JSON.stringify([message], null, space))
-      assert.equal(safeSerializer([longString, 0], replacer, space), JSON.stringify([message, 0], null, space))
-      assert.equal(safeSerializer([0, longString], replacer, space), JSON.stringify([0, message], null, space))
+  JSON.stringify = (input, replacer, space) => {
+    if (input === value) throw new RangeError('Invalid string length')
+    return nativeStringify(input, replacer, space)
+  }
+  try {
+    for (const replacer of [undefined, identityReplacer, ['value']]) {
+      for (const space of [undefined, 2]) {
+        assert.equal(serializer([value], replacer, space), nativeStringify([message], null, space))
+        assert.equal(serializer([value, 0, '\t'], replacer, space), nativeStringify([message, 0, '\t'], null, space))
+        assert.equal(serializer(['\t', 0, value], replacer, space), nativeStringify(['\t', 0, message], null, space))
+      }
     }
+  } finally {
+    JSON.stringify = nativeStringify
   }
   assert.end()
 })
