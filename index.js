@@ -6,7 +6,8 @@ const { hasOwnProperty } = Object.prototype
 
 // eslint-disable-next-line no-control-regex
 const strEscapeSequencesRegExp = /[\u0000-\u001f\u0022\u005c\ud800-\udfff]/
-const strEscapeLength = typeof process === 'object' && Number(process?.versions?.node?.split('.')[0]) >= 22 ? 128 : 5000
+const nodeVersion = typeof process === 'object' ? process?.versions?.node : undefined
+const strEscapeLength = Number(nodeVersion?.slice(0, nodeVersion.indexOf('.'))) >= 22 ? 128 : 5000
 
 // Escape C0 control characters, double quotes, the backslash and every code
 // unit with a numeric value in the inclusive range 0xD800 to 0xDFFF.
@@ -29,12 +30,18 @@ function sort (array, comparator) {
     return array.sort(comparator)
   }
   let moves = 0
-  for (let i = 1; i < array.length; i++) {
-    const currentValue = array[i]
-    if (array[i - 1] <= currentValue) continue
-    if (i === 1 && array.length > 32 && currentValue > array[array.length - 1]) {
+  if (array.length > 1 && array[0] > array[1]) {
+    const currentValue = array[1]
+    if (array.length > 32 && currentValue > array[array.length - 1]) {
       return array.sort()
     }
+    array[1] = array[0]
+    array[0] = currentValue
+    moves = 1
+  }
+  for (let i = 2; i < array.length; i++) {
+    const currentValue = array[i]
+    if (array[i - 1] <= currentValue) continue
     let position = i
     do {
       array[position] = array[position - 1]
@@ -580,10 +587,7 @@ function configure (options) {
         return undefined
       case 'bigint':
         if (bigint) {
-          if (bigint === 'string') {
-            return `"${String(value)}"`
-          }
-          return String(value)
+          return bigint === 'string' ? `"${value}"` : String(value)
         }
         // fallthrough
       default:
@@ -711,9 +715,8 @@ function configure (options) {
           return stringifyFnReplacer('', { '': value }, [], replacer, spacer, '')
         }
         if (Array.isArray(replacer)) {
-          const keys = getUniqueReplacerSet(replacer)
           return typeof value === 'object'
-            ? stringifyArrayReplacer('', value, [], keys, spacer, '')
+            ? stringifyArrayReplacer('', value, [], getUniqueReplacerSet(replacer), spacer, '')
             : stringifyPrimitive(value)
         }
       }

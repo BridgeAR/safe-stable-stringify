@@ -10,7 +10,7 @@ test('escaping preserves output across runtime and string length boundaries', (a
   const nativeProcess = globalThis.process
   const exportSymbol = Symbol.for('safe-stable-stringify@3.0.0')
   const descriptor = /** @type {PropertyDescriptor} */ (Object.getOwnPropertyDescriptor(globalThis, exportSymbol))
-  for (const process of [undefined, null, {}, { versions: {} }, { versions: { node: '21.0.0' } }, { versions: { node: '22.0.0' } }]) {
+  for (const process of [undefined, null, {}, { versions: {} }, { versions: { node: '21.0.0' } }, { versions: { node: '22.0.0' } }, { versions: { node: '26.3.1' } }]) {
     let serializer
     try {
       // @ts-expect-error
@@ -33,7 +33,7 @@ test('escaping preserves output across runtime and string length boundaries', (a
         }
         const value = 'x'.repeat(length)
         const output = serializer(value)
-        const threshold = process?.versions?.node === '22.0.0' ? 128 : 5000
+        const threshold = Number.parseInt(process?.versions?.node ?? '') >= 22 ? 128 : 5000
         assert.equal(calls, length >= threshold ? 1 : 0, 'native escaping follows the runtime threshold')
         assert.equal(output, original(value))
       } finally {
@@ -402,24 +402,6 @@ test('primitive failures and bigint options retain their behavior in every mode'
       const expected = typeof replacer === 'function' ? { value: error } : error
       assert.equal(serializer([failing, 0], replacer, space), JSON.stringify([expected, 0], null, space))
       assert.equal(serializer([0, failing], replacer, space), JSON.stringify([0, expected], null, space))
-    }
-  }
-  assert.end()
-})
-
-test('array replacer entries are processed for every root type', (assert) => {
-  for (const safe of [false, true]) {
-    const serializer = stringify.configure({ safe })
-    for (const value of [{ value: 1 }, [1], null, 1, 1n, 'text', true, undefined, Symbol('test'), () => {}]) {
-      for (const space of [undefined, 2]) {
-        let reads = 0
-        const replacer = ['value']
-        Object.defineProperty(replacer, 0, { get () { reads++; return 'value' } })
-        assert.equal(serializer(value, replacer, space), value === 1n ? '1' : JSON.stringify(value, null, space))
-        assert.equal(reads, 1)
-        Object.defineProperty(replacer, 0, { get () { throw new Error('Oops') } })
-        assert.throws(() => serializer(value, replacer, space), /Oops/)
-      }
     }
   }
   assert.end()
@@ -1798,11 +1780,12 @@ test('deterministic default sorting', function (assert) {
 })
 
 test('deterministic sorting preserves keys across insertion and native sort boundaries', /** @param {import('tap').Test} assert */ (assert) => {
-  for (const size of [8, 9, 31, 32, 33, 34, 199, 200, 201]) {
+  for (const size of [0, 1, 2, 3, 8, 9, 31, 32, 33, 34, 199, 200, 201]) {
     const keys = Array.from({ length: size }, /** @param {unknown} value @param {number} index */ (value, index) => `key${String(index).padStart(3, '0')}`)
     const adjacent = keys.slice()
-    ;[adjacent[1], adjacent[2]] = [adjacent[2], adjacent[1]]
-    for (const order of [keys, keys.slice().reverse(), adjacent, [keys[size - 1], ...keys.slice(0, -1)]]) {
+    if (size > 1) [adjacent[0], adjacent[1]] = [adjacent[1], adjacent[0]]
+    const rotated = size > 0 ? [keys[size - 1], ...keys.slice(0, -1)] : []
+    for (const order of [keys, keys.slice().reverse(), adjacent, rotated]) {
       const value = {}
       const expected = {}
       for (const key of order) value[key] = key
@@ -1813,6 +1796,42 @@ test('deterministic sorting preserves keys across insertion and native sort boun
         }
       }
     }
+  }
+  assert.end()
+})
+
+test('array replacers are only processed in the object branch', (assert) => {
+  for (const options of /** @type {const} */ ([{}, { safe: true }, { strict: true }, { safe: true, strict: true }, { bigint: false }, { bigint: 'string' }])) {
+    const serialize = stringify.configure(options)
+    for (const property of ['0', Symbol.iterator]) {
+      let reads = 0
+      const replacer = ['value']
+      const error = new Error('replacer read')
+      Object.defineProperty(replacer, property, {
+        get () {
+          reads++
+          throw error
+        }
+      })
+      for (const value of ['value', 0, NaN, Infinity, true, false, undefined, 42n, Symbol('value'), identityReplacer]) {
+        let expected
+        try {
+          expected = serialize(value)
+        } catch (error) {
+          assert.throws(() => serialize(value, replacer), /** @type {Error} */ (error))
+          continue
+        }
+        for (const space of [undefined, 2, '\t']) {
+          assert.equal(serialize(value, replacer, space), expected)
+        }
+      }
+      assert.equal(reads, 0, 'primitive roots do not read the array replacer')
+      for (const value of [null, {}, { value: 1 }, []]) {
+        assert.throws(() => serialize(value, replacer), error)
+      }
+      assert.equal(reads, 4, 'the object branch still processes the array replacer')
+    }
+    assert.equal(serialize({ value: 1, other: 2 }, ['value', 'value']), '{"value":1}')
   }
   assert.end()
 })
