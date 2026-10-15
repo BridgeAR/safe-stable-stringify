@@ -131,48 +131,84 @@ with `JSON.stringify()`.
 
 ## Performance / Benchmarks
 
-Currently this is by far the fastest known stable (deterministic) stringify
-implementation. This is especially important for big objects and TypedArrays.
+(Apple M4 Max, macOS 26.6.2, Node.js 26.3.1, V8 14.6.202.34-node.20)
 
-(Dell Precision 5540, i7-9850H CPU @ 2.60GHz, Node.js 16.11.1)
-
-```md
-simple:   simple object x 3,463,894 ops/sec ±0.44% (98 runs sampled)
-simple:   circular      x 1,236,007 ops/sec ±0.46% (99 runs sampled)
-simple:   deep          x 18,942 ops/sec ±0.41% (93 runs sampled)
-simple:   deep circular x 18,690 ops/sec ±0.72% (96 runs sampled)
-
-replacer:   simple object x 2,664,940 ops/sec ±0.31% (98 runs sampled)
-replacer:   circular      x 1,015,981 ops/sec ±0.09% (99 runs sampled)
-replacer:   deep          x 17,328 ops/sec ±0.38% (97 runs sampled)
-replacer:   deep circular x 17,071 ops/sec ±0.21% (98 runs sampled)
-
-array:   simple object x 3,869,608 ops/sec ±0.22% (98 runs sampled)
-array:   circular      x 3,853,943 ops/sec ±0.45% (96 runs sampled)
-array:   deep          x 3,563,227 ops/sec ±0.20% (100 runs sampled)
-array:   deep circular x 3,286,475 ops/sec ±0.07% (100 runs sampled)
-
-indentation:   simple object x 2,183,162 ops/sec ±0.66% (97 runs sampled)
-indentation:   circular      x 872,538 ops/sec ±0.57% (98 runs sampled)
-indentation:   deep          x 16,795 ops/sec ±0.48% (93 runs sampled)
-indentation:   deep circular x 16,443 ops/sec ±0.40% (97 runs sampled)
+```text
+Apple M4 Max; Node v26.3.1; V8 14.6.202.34-node.20
+simple: simple object              4,280,054 ops/sec (7 runs, CV 1.21%)
+simple: circular                   1,867,764 ops/sec (7 runs, CV 0.90%)
+simple: deep                       31,783 ops/sec (7 runs, CV 1.85%)
+simple: deep circular              31,095 ops/sec (7 runs, CV 1.07%)
+replacer: simple object            2,847,302 ops/sec (7 runs, CV 1.13%)
+replacer: circular                 1,264,209 ops/sec (7 runs, CV 0.47%)
+replacer: deep                     29,244 ops/sec (7 runs, CV 0.77%)
+replacer: deep circular            28,500 ops/sec (7 runs, CV 0.76%)
+array: simple object               4,433,315 ops/sec (7 runs, CV 1.20%)
+array: circular                    4,400,683 ops/sec (7 runs, CV 0.82%)
+array: deep                        4,410,383 ops/sec (7 runs, CV 0.50%)
+array: deep circular               4,435,182 ops/sec (7 runs, CV 0.52%)
+full replacer: simple object       2,675,568 ops/sec (7 runs, CV 0.81%)
+full replacer: circular            1,226,915 ops/sec (7 runs, CV 0.75%)
+full replacer: deep                27,826 ops/sec (7 runs, CV 0.99%)
+full replacer: deep circular       27,239 ops/sec (7 runs, CV 1.96%)
+full array: simple object          3,781,217 ops/sec (7 runs, CV 0.95%)
+full array: circular               3,771,576 ops/sec (7 runs, CV 1.36%)
+full array: deep                   3,781,851 ops/sec (7 runs, CV 1.60%)
+full array: deep circular          3,835,795 ops/sec (7 runs, CV 0.93%)
+indentation: simple object         3,971,352 ops/sec (7 runs, CV 1.33%)
+indentation: circular              1,810,550 ops/sec (7 runs, CV 1.06%)
+indentation: deep                  31,776 ops/sec (7 runs, CV 1.20%)
+indentation: deep circular         31,396 ops/sec (7 runs, CV 1.41%)
 ```
 
 Comparing `safe-stable-stringify` with known alternatives:
 
-```md
-fast-json-stable-stringify x 18,765 ops/sec ±0.71% (94 runs sampled)
-json-stable-stringify x 13,870 ops/sec ±0.72% (94 runs sampled)
-fast-stable-stringify x 21,343 ops/sec ±0.33% (95 runs sampled)
-faster-stable-stringify x 17,707 ops/sec ±0.44% (97 runs sampled)
-json-stringify-deterministic x 11,208 ops/sec ±0.57% (98 runs sampled)
-fast-safe-stringify x 21,460 ops/sec ±0.75% (99 runs sampled)
-this x 30,367 ops/sec ±0.39% (96 runs sampled)
-
-The fastest is this
+```text
+Apple M4 Max; Node v26.3.1; V8 14.6.202.34-node.20
+fastest-stable-stringify           73,060 ops/sec (7 runs, CV 0.30%)
+fast-json-stable-stringify         66,953 ops/sec (7 runs, CV 0.87%)
+json-stable-stringify              50,656 ops/sec (7 runs, CV 0.48%)
+fast-stable-stringify              72,668 ops/sec (7 runs, CV 0.94%)
+faster-stable-stringify            64,879 ops/sec (7 runs, CV 0.80%)
+json-stringify-deterministic       45,529 ops/sec (7 runs, CV 0.72%)
+fast-safe-stringify                59,107 ops/sec (7 runs, CV 0.55%)
+safe-stable-stringify              75,892 ops/sec (7 runs, CV 0.48%)
 ```
 
-The `fast-safe-stringify` comparison uses the modules stable implementation.
+The `fast-safe-stringify` comparison uses its stable implementation.
+
+### Typed arrays
+
+Serializing a telemetry record with binary sensor data, a Date, and a Buffer:
+
+```text
+Apple M4 Max; Node v26.3.1; V8 14.6.202.34-node.20
+fastest-stable-stringify           69,502 ops/sec (7 runs, CV 0.73%)
+fast-json-stable-stringify         63,260 ops/sec (7 runs, CV 0.31%)
+json-stable-stringify              46,499 ops/sec (7 runs, CV 0.75%)
+fast-stable-stringify              116,091 ops/sec (7 runs, CV 0.68%)
+faster-stable-stringify            62,078 ops/sec (7 runs, CV 0.65%)
+json-stringify-deterministic       33,567 ops/sec (7 runs, CV 0.57%)
+fast-safe-stringify                56,618 ops/sec (7 runs, CV 0.57%)
+safe-stable-stringify              126,114 ops/sec (7 runs, CV 0.48%)
+```
+
+### Typed arrays and BigInt
+
+The same record with 64-bit counters. BigInt values serialize as decimal strings
+through each library's public options.
+
+```text
+fastest-stable-stringify: BigInt is not supported
+fast-json-stable-stringify: BigInt is not supported
+fast-stable-stringify: BigInt is not supported
+faster-stable-stringify: BigInt is not supported
+Apple M4 Max; Node v26.3.1; V8 14.6.202.34-node.20
+json-stable-stringify              39,849 ops/sec (7 runs, CV 1.23%)
+json-stringify-deterministic       43,579 ops/sec (7 runs, CV 0.46%)
+fast-safe-stringify                42,583 ops/sec (7 runs, CV 0.85%)
+safe-stable-stringify              113,681 ops/sec (7 runs, CV 0.87%)
+```
 
 ## Acknowledgements
 

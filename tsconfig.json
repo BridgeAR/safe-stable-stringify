@@ -1,12 +1,10 @@
 {
   "compilerOptions": {
-    "baseUrl": "./",
     "allowJs": true,
     "checkJs": true,
     "sourceMap": false,
     "declaration": false,
     "noEmit": true,
-    "downlevelIteration": false,
     "experimentalDecorators": false,
     "moduleResolution": "nodenext",
     "importHelpers": false,
@@ -20,5 +18,5 @@
     ]
   },
   "include": ["**/*.js", "**/*.ts", "**/*.cts", "**/*.mts", "wrapper.cjs", "esm/wrapper.mjs"],
-  "exclude": ["compare.js", "benchmark.js", "./coverage"]
+  "exclude": ["compare.js", "benchmark.js", "benchmark-utils.js", "./coverage", "./.tap"]
 }

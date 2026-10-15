@@ -5,6 +5,7 @@ const { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 const { tmpdir } = require('node:os')
 const { join } = require('node:path')
 const { promisify } = require('node:util')
+const { runInNewContext } = require('node:vm')
 
 const { build } = require('esbuild')
 const { rollup } = require('rollup')
@@ -12,6 +13,12 @@ const { test } = require('tap')
 
 const execFileAsync = promisify(execFile)
 const { version } = require('./package.json')
+
+function runNode (args, options) {
+  // TAP's process tracker adds a deprecated loader to ESM consumers on Node 26.
+  const nodeArgs = Number(process.versions.node.split('.')[0]) >= 26 ? ['--disable-warning=DEP0205', ...args] : args
+  return execFileAsync(process.execPath, nodeArgs, options)
+}
 
 /**
  * @param {string} directory
@@ -61,8 +68,8 @@ async function testModuleEntryPoints (assert) {
   }
 
   const results = await Promise.all([
-    execFileAsync(process.execPath, ['modules.cjs', 'require-first'], { cwd: directory }),
-    execFileAsync(process.execPath, ['modules.cjs', 'import-first'], { cwd: directory })
+    runNode(['modules.cjs', 'require-first'], { cwd: directory }),
+    runNode(['modules.cjs', 'import-first'], { cwd: directory })
   ])
   for (const { stdout, stderr } of results) {
     assert.equal(stdout, '', 'no output')
@@ -114,11 +121,12 @@ async function testBundlers (assert) {
     await bundle.close()
   }
   const esmSource = readFileSync(join(directory, 'consumer.mjs'), 'utf8')
+  runInNewContext(readFileSync(join(directory, 'esbuild.cjs'), 'utf8'))
   writeFileSync(join(directory, 'rollup-consumer.mjs'), esmSource.replace('safe-stable-stringify', './rollup.mjs'))
   const results = await Promise.all([
-    execFileAsync(process.execPath, [join(directory, 'esbuild.mjs')]),
-    execFileAsync(process.execPath, [join(directory, 'esbuild.cjs')]),
-    execFileAsync(process.execPath, [join(directory, 'rollup-consumer.mjs')])
+    runNode([join(directory, 'esbuild.mjs')]),
+    runNode([join(directory, 'esbuild.cjs')]),
+    runNode([join(directory, 'rollup-consumer.mjs')])
   ])
   for (const { stdout, stderr } of results) {
     assert.equal(stdout, '', 'bundle produces no output')
@@ -137,12 +145,13 @@ async function testTypes (assert) {
     ['CommonJS', 'Node', 'types.cts', 'types.mts'],
     ['ESNext', 'Bundler', 'types.mts']
   ]) {
-    tasks.push(execFileAsync(process.execPath, [
+    tasks.push(runNode([
       require.resolve('typescript/bin/tsc'),
       '--noEmit',
       '--strict',
       '--module', module,
       '--moduleResolution', resolution,
+      '--ignoreDeprecations', '6.0',
       '--target', 'ES2020',
       ...files
     ], { cwd: directory }))

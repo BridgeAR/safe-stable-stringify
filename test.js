@@ -4,6 +4,57 @@ const clone = require('clone')
 const { constants: { MAX_STRING_LENGTH } } = require('buffer')
 const { runInNewContext } = require('vm')
 
+test('escaping preserves output across runtime and string length boundaries', (assert) => {
+  const paths = [require.resolve('./index.js'), require.resolve('.')]
+  const cached = paths.map(path => require.cache[path])
+  const nativeProcess = globalThis.process
+  const exportSymbol = Symbol.for('safe-stable-stringify@3.0.0')
+  const descriptor = /** @type {PropertyDescriptor} */ (Object.getOwnPropertyDescriptor(globalThis, exportSymbol))
+  for (const process of [undefined, null, {}, { versions: {} }, { versions: { node: '21.0.0' } }, { versions: { node: '22.0.0' } }, { versions: { node: '26.3.1' } }]) {
+    let serializer
+    try {
+      // @ts-expect-error
+      globalThis.process = process
+      for (const path of paths) delete require.cache[path]
+      delete globalThis[exportSymbol]
+      serializer = require('.')
+    } finally {
+      globalThis.process = nativeProcess
+      Object.defineProperty(globalThis, exportSymbol, descriptor)
+      for (let i = 0; i < paths.length; i++) require.cache[paths[i]] = cached[i]
+    }
+    for (const length of [0, 31, 32, 127, 128, 4999, 5000]) {
+      const original = JSON.stringify
+      let calls = 0
+      try {
+        JSON.stringify = value => {
+          calls++
+          return original(value)
+        }
+        const value = 'x'.repeat(length)
+        const output = serializer(value)
+        const threshold = Number.parseInt(process?.versions?.node ?? '') >= 22 ? 128 : 5000
+        assert.equal(calls, length >= threshold ? 1 : 0, 'native escaping follows the runtime threshold')
+        assert.equal(output, original(value))
+      } finally {
+        JSON.stringify = original
+      }
+      for (const ending of ['', '"', '\\', '\n', '\ud800', '\udfff', '\ud83d\ude00', '\u0100']) {
+        const value = 'x'.repeat(Math.max(0, length - ending.length)) + ending
+        for (const input of [value, [value], { [value]: value }]) {
+          for (const replacer of [null, (_, value) => value, [value]]) {
+            for (const space of [undefined, 2]) {
+              // @ts-expect-error
+              assert.equal(serializer(input, replacer, space), JSON.stringify(input, replacer, space))
+            }
+          }
+        }
+      }
+    }
+  }
+  assert.end()
+})
+
 for (const name of ['Float16Array', 'Float32Array', 'Float64Array']) {
   const TypedArray = globalThis[/** @type {'Float16Array' | 'Float32Array' | 'Float64Array'} */ (name)]
   test(`${name} serializes non-finite values`, { skip: TypedArray === undefined },
@@ -257,6 +308,123 @@ test('toJSON receives array keys as string', /** @param {import('tap').Test} ass
         assert.strictSame(keys, ['0', '1', '0', '10', '1000'])
       }
     }
+  }
+  assert.end()
+})
+
+test('primitive values preserve their formatting in every mode', (assert) => {
+  const values = [0, -0, 1.5, NaN, Infinity, -Infinity, '', 'text', '\n"\\', '\ud800', null, undefined, true, false, Symbol('value'), () => {}, { value: 42 }]
+  for (const safe of [false, true]) {
+    const serializer = stringify.configure({ safe })
+    for (const replacer of [undefined, identityReplacer, ['value']]) {
+      for (const space of [undefined, 2]) {
+        for (const value of values) {
+          for (const input of [value, [value, value], [value], { value }]) {
+            assert.equal(serializer(input, replacer, space), JSON.stringify(input, null, space))
+          }
+          const wrapped = { toJSON () { return value } }
+          assert.equal(serializer([wrapped, wrapped], replacer, space), JSON.stringify([wrapped, wrapped], null, space))
+        }
+        assert.equal(serializer(new Array(2), replacer, space), JSON.stringify([null, null], null, space))
+      }
+    }
+  }
+  assert.end()
+})
+
+test('primitive escaping failures preserve adjacent elements in every mode', (assert) => {
+  const serializer = stringify.configure({ safe: true })
+  const value = '\n'
+  const nativeStringify = JSON.stringify
+  const message = 'Error: Stringification failed (Invalid string length)'
+  JSON.stringify = (input, replacer, space) => {
+    if (input === value) throw new RangeError('Invalid string length')
+    return nativeStringify(input, replacer, space)
+  }
+  try {
+    for (const replacer of [undefined, identityReplacer, ['value']]) {
+      for (const space of [undefined, 2]) {
+        assert.equal(serializer([value], replacer, space), nativeStringify([message], null, space))
+        assert.equal(serializer([value, 0, '\t'], replacer, space), nativeStringify([message, 0, '\t'], null, space))
+        assert.equal(serializer(['\t', 0, value], replacer, space), nativeStringify(['\t', 0, message], null, space))
+      }
+    }
+  } finally {
+    JSON.stringify = nativeStringify
+  }
+  assert.end()
+})
+
+test('primitive failures and bigint options retain their behavior in every mode', (assert) => {
+  const unsupported = /** @type {[number | symbol | (() => void), string][]} */ ([
+    [NaN, 'number (NaN)'],
+    [Infinity, 'number (Infinity)'],
+    [-Infinity, 'number (-Infinity)'],
+    [Symbol('value'), 'symbol (Symbol(value))'],
+    [() => {}, 'function']
+  ])
+  const strict = stringify.configure({ strict: true })
+  const safeStrict = stringify.configure({ strict: true, safe: true })
+  const serializer = stringify.configure({ safe: true })
+  const failing = { get value () { throw new Error('Oops') } }
+  for (const replacer of [undefined, identityReplacer, ['value']]) {
+    for (const space of [undefined, 2]) {
+      for (const [value, description] of unsupported) {
+        assert.throws(() => strict([value, 0], replacer, space), /Object can not safely be stringified/)
+        assert.throws(() => strict([0, value], replacer, space), /Object can not safely be stringified/)
+        const message = `Error: Stringification failed (Object can not safely be stringified. Received type ${description})`
+        assert.equal(safeStrict([value, 0], replacer, space), JSON.stringify([message, 0], null, space))
+        assert.equal(safeStrict([0, value], replacer, space), JSON.stringify([0, message], null, space))
+      }
+      assert.equal(safeStrict([undefined, undefined], replacer, space), JSON.stringify([null, null], null, space))
+      for (const bigint of /** @type {const} */ ([true, false, 'string'])) {
+        for (const safe of [false, true]) {
+          for (const strict of [false, true]) {
+            const serializer = stringify.configure({ bigint, safe, strict })
+            if (strict && !bigint && !safe) {
+              assert.throws(() => serializer([1n, 0], replacer, space), /Received type bigint \(1\)/)
+              assert.throws(() => serializer([0, 1n], replacer, space), /Received type bigint \(1\)/)
+            } else {
+              const expected = bigint === 'string'
+                ? '1'
+                : bigint
+                  ? 1
+                  : strict
+                    ? 'Error: Stringification failed (Object can not safely be stringified. Received type bigint (1))'
+                    : null
+              assert.equal(serializer([1n, 0], replacer, space), JSON.stringify([expected, 0], null, space))
+              assert.equal(serializer([0, 1n], replacer, space), JSON.stringify([0, expected], null, space))
+            }
+          }
+        }
+      }
+      const error = 'Error: Stringification failed (Oops)'
+      const expected = typeof replacer === 'function' ? { value: error } : error
+      assert.equal(serializer([failing, 0], replacer, space), JSON.stringify([expected, 0], null, space))
+      assert.equal(serializer([0, failing], replacer, space), JSON.stringify([0, expected], null, space))
+    }
+  }
+  assert.end()
+})
+
+test('function replacers run after toJSON and can change each input type', (assert) => {
+  for (const space of [undefined, 2]) {
+    const calls = []
+    const input = [{ toJSON (key) { calls.push(`toJSON:${key}`); return 1 } }, {}, undefined]
+    /** @this {object} */
+    function replacer (key, value) {
+      calls.push(`replacer:${key}`)
+      if (key === '0') {
+        assert.equal(this, input)
+        assert.equal(value, 1)
+        return { value }
+      }
+      if (key === '1') return false
+      if (key === '2') return 'filled'
+      return value
+    }
+    assert.equal(stringify(input, replacer, space), JSON.stringify([{ value: 1 }, false, 'filled'], null, space))
+    assert.strictSame(calls, ['replacer:', 'toJSON:0', 'replacer:0', 'replacer:value', 'replacer:1', 'replacer:2'])
   }
   assert.end()
 })
@@ -1612,11 +1780,12 @@ test('deterministic default sorting', function (assert) {
 })
 
 test('deterministic sorting preserves keys across insertion and native sort boundaries', /** @param {import('tap').Test} assert */ (assert) => {
-  for (const size of [8, 9, 31, 32, 33, 34, 199, 200, 201]) {
+  for (const size of [0, 1, 2, 3, 8, 9, 31, 32, 33, 34, 199, 200, 201]) {
     const keys = Array.from({ length: size }, /** @param {unknown} value @param {number} index */ (value, index) => `key${String(index).padStart(3, '0')}`)
     const adjacent = keys.slice()
-    ;[adjacent[1], adjacent[2]] = [adjacent[2], adjacent[1]]
-    for (const order of [keys, keys.slice().reverse(), adjacent, [keys[size - 1], ...keys.slice(0, -1)]]) {
+    if (size > 1) [adjacent[0], adjacent[1]] = [adjacent[1], adjacent[0]]
+    const rotated = size > 0 ? [keys[size - 1], ...keys.slice(0, -1)] : []
+    for (const order of [keys, keys.slice().reverse(), adjacent, rotated]) {
       const value = {}
       const expected = {}
       for (const key of order) value[key] = key
@@ -1627,6 +1796,42 @@ test('deterministic sorting preserves keys across insertion and native sort boun
         }
       }
     }
+  }
+  assert.end()
+})
+
+test('array replacers are only processed in the object branch', (assert) => {
+  for (const options of /** @type {const} */ ([{}, { safe: true }, { strict: true }, { safe: true, strict: true }, { bigint: false }, { bigint: 'string' }])) {
+    const serialize = stringify.configure(options)
+    for (const property of ['0', Symbol.iterator]) {
+      let reads = 0
+      const replacer = ['value']
+      const error = new Error('replacer read')
+      Object.defineProperty(replacer, property, {
+        get () {
+          reads++
+          throw error
+        }
+      })
+      for (const value of ['value', 0, NaN, Infinity, true, false, undefined, 42n, Symbol('value'), identityReplacer]) {
+        let expected
+        try {
+          expected = serialize(value)
+        } catch (error) {
+          assert.throws(() => serialize(value, replacer), /** @type {Error} */ (error))
+          continue
+        }
+        for (const space of [undefined, 2, '\t']) {
+          assert.equal(serialize(value, replacer, space), expected)
+        }
+      }
+      assert.equal(reads, 0, 'primitive roots do not read the array replacer')
+      for (const value of [null, {}, { value: 1 }, []]) {
+        assert.throws(() => serialize(value, replacer), error)
+      }
+      assert.equal(reads, 4, 'the object branch still processes the array replacer')
+    }
+    assert.equal(serialize({ value: 1, other: 2 }, ['value', 'value']), '{"value":1}')
   }
   assert.end()
 })
