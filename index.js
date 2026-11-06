@@ -753,4 +753,4 @@ if (sharedGlobal[exportSymbol] === undefined) {
     value: /** @type {typeof import('./index.js').default} */ (stringify),
     writable: true
   })
-      }
+}
