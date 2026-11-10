@@ -1,9 +1,12 @@
 # Changelog
 
-## Next
+## v3.0.1
 
 - Apply `bigint: false` and strict mode to BigInt typed-array entries.
 - Report strict-mode errors at their typed-array indices when `safe` is enabled.
+- Escape caught error messages in safe mode so quotes, backslashes, and control characters produce valid JSON.
+
+## v3.0.0
 
 - **Breaking change:** Require Node.js 18 or later.
 - Fix ESM imports in Node.js and bundlers, including applications that also use CommonJS.
