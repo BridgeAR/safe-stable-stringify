@@ -2074,3 +2074,23 @@ test('safe mode safeguards against failing toJSON and a difficult to stringify e
 
   assert.end()
 })
+
+test('safe mode escapes error messages from throwing getters', (assert) => {
+  const serializer = stringify.configure({ safe: true })
+  for (const message of ['Missing "token"', 'line\nbreak', 'path\\file', '\u0000', '\ud800']) {
+    const input = { get token () { throw new Error(message) } }
+    const expected = `Error: Stringification failed (${message})`
+    const results = [
+      serializer(input),
+      serializer(input, null, 2),
+      serializer(input, ['token'])
+    ]
+    for (const result of results) {
+      assert.equal(result, JSON.stringify(expected))
+      assert.equal(JSON.parse(/** @type {string} */ (result)), expected)
+    }
+    const replaced = serializer(input, (key, value) => value)
+    assert.same(JSON.parse(/** @type {string} */ (replaced)), { token: expected })
+  }
+  assert.end()
+})

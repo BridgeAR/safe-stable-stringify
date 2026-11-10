@@ -259,7 +259,7 @@ function makeSafe (method, name) {
       if (name !== undefined) {
         return getErrorMessage(error, name)
       }
-      return `"${getErrorMessage(error, name)}"`
+      return strEscape(getErrorMessage(error, name))
     }
   }
   Object.defineProperty(safeMethod, 'name', { value: `safe_${method.name}` })
