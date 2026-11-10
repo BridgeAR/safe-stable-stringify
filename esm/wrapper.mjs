@@ -4,6 +4,6 @@ const sharedGlobal = /** @type {Record<symbol, typeof import('../index.js').defa
   globalThis
 )
 
-export const stringify = sharedGlobal[Symbol.for('safe-stable-stringify@3.0.0')]
+export const stringify = sharedGlobal[Symbol.for('safe-stable-stringify@3.0.1')]
 export const configure = stringify.configure
 export default stringify
