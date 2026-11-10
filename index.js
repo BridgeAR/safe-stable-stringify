@@ -740,7 +740,7 @@ function configure (options) {
 const sharedGlobal = /** @type {Record<symbol, typeof import('./index.js').default | undefined>} */ (
   globalThis
 )
-const exportSymbol = Symbol.for('safe-stable-stringify@3.0.0')
+const exportSymbol = Symbol.for('safe-stable-stringify@3.0.1')
 
 if (sharedGlobal[exportSymbol] === undefined) {
   const stringify = configure()

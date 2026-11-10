@@ -8,7 +8,7 @@ test('escaping preserves output across runtime and string length boundaries', (a
   const paths = [require.resolve('./index.js'), require.resolve('.')]
   const cached = paths.map(path => require.cache[path])
   const nativeProcess = globalThis.process
-  const exportSymbol = Symbol.for('safe-stable-stringify@3.0.0')
+  const exportSymbol = Symbol.for('safe-stable-stringify@3.0.1')
   const descriptor = /** @type {PropertyDescriptor} */ (Object.getOwnPropertyDescriptor(globalThis, exportSymbol))
   for (const process of [undefined, null, {}, { versions: {} }, { versions: { node: '21.0.0' } }, { versions: { node: '22.0.0' } }, { versions: { node: '26.3.1' } }]) {
     let serializer
