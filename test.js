@@ -61,6 +61,7 @@ for (const name of ['Float16Array', 'Float32Array', 'Float64Array']) {
     /** @param {import('tap').Test} assert */
     (assert) => {
       const strict = stringify.configure({ strict: true })
+      const safeStrict = stringify.configure({ strict: true, safe: true })
       for (const space of [undefined, 2]) {
         for (const number of [NaN, Infinity, -Infinity]) {
           for (const values of [[number, 1], [1, number]]) {
@@ -69,6 +70,13 @@ for (const name of ['Float16Array', 'Float32Array', 'Float64Array']) {
             assert.throws(() => strict(value, null, space), {
               message: `Object can not safely be stringified. Received type number (${number})`
             })
+            const expected = { metrics: {} }
+            for (let i = 0; i < values.length; i++) {
+              expected.metrics[i] = Number.isFinite(values[i])
+                ? values[i]
+                : `Error: Stringification failed (Object can not safely be stringified. Received type number (${values[i]}))`
+            }
+            assert.equal(safeStrict(value, null, space), JSON.stringify(expected, null, space))
           }
         }
         const finite = new TypedArray([-0, 1.5, -2])
@@ -120,6 +128,100 @@ test('integer and bigint typed arrays retain their formatting',
         for (const space of [undefined, 2]) {
           assert.equal(serialize(value, null, space), JSON.stringify(expected, null, space))
         }
+      }
+    }
+    assert.end()
+  })
+
+test('bigint typed arrays apply the configured bigint policy',
+  /** @param {import('tap').Test} assert */
+  (assert) => {
+    for (const TypedArray of [BigInt64Array, BigUint64Array]) {
+      for (const values of [[], [0n], [1n, 2n]]) {
+        const value = new TypedArray(values)
+        for (const space of [undefined, 2]) {
+          for (const safe of [false, true]) {
+            const omit = stringify.configure({ bigint: false, safe })
+            assert.equal(omit(value, null, space), '{}')
+            assert.equal(omit({ nested: value }, null, space), JSON.stringify({ nested: {} }, null, space))
+            for (const bigint of [undefined, false]) {
+              const strict = stringify.configure({ strict: true, bigint, safe })
+              const expected = {}
+              for (let i = 0; i < values.length; i++) {
+                expected[i] = `Error: Stringification failed (Object can not safely be stringified. Received type bigint (${values[i]}))`
+              }
+              if (safe || values.length === 0) {
+                assert.equal(strict(value, null, space), JSON.stringify(expected, null, space))
+                assert.equal(strict({ nested: value }, null, space), JSON.stringify({ nested: expected }, null, space))
+              } else {
+                assert.throws(() => strict(value, null, space), {
+                  message: `Object can not safely be stringified. Received type bigint (${values[0]})`
+                })
+              }
+            }
+            for (const bigint of /** @type {const} */ ([true, 'string'])) {
+              const strict = stringify.configure({ strict: true, bigint, safe })
+              const expected = {}
+              for (let i = 0; i < values.length; i++) {
+                expected[i] = bigint === 'string' ? String(values[i]) : Number(values[i])
+              }
+              assert.equal(strict(value, null, space), JSON.stringify(expected, null, space))
+            }
+          }
+        }
+      }
+    }
+    assert.end()
+  })
+
+test('omitted bigint typed array entries preserve property order and breadth',
+  /** @param {import('tap').Test} assert */
+  (assert) => {
+    for (const TypedArray of [BigInt64Array, BigUint64Array]) {
+      const value = Object.assign(new TypedArray(12), { z: 1, a: 2 })
+      const descending = /** @param {string} left @param {string} right */ (left, right) => right.localeCompare(left)
+      for (const deterministic of [true, false, descending]) {
+        for (const maximumBreadth of [1, 11, 12, 13, 14, 15]) {
+          for (const safe of [false, true]) {
+            const serialize = stringify.configure({ bigint: false, deterministic, maximumBreadth, safe })
+            const expected = {}
+            if (maximumBreadth > 12) {
+              const keys = deterministic === true ? ['a', 'z'] : ['z', 'a']
+              for (const key of keys.slice(0, maximumBreadth - 12)) expected[key] = value[key]
+            }
+            if (maximumBreadth < 14) {
+              const count = 14 - maximumBreadth
+              expected['...'] = `${count} ${count === 1 ? 'item' : 'items'} not stringified`
+            }
+            for (const space of [undefined, 2]) {
+              assert.equal(serialize(value, null, space), JSON.stringify(expected, null, space))
+            }
+          }
+        }
+      }
+    }
+    assert.end()
+  })
+
+test('bigint typed array policy uses the intrinsic type',
+  /** @param {import('tap').Test} assert */
+  (assert) => {
+    class BigIntSubclass extends BigInt64Array {}
+    const foreign = runInNewContext('new BigUint64Array([1n, 2n])')
+    const subclass = new BigIntSubclass([1n, 2n])
+    const disguised = new BigInt64Array([1n, 2n])
+    Object.defineProperties(disguised, {
+      constructor: { value: Int32Array },
+      [Symbol.toStringTag]: { value: 'Int32Array' }
+    })
+    const serialize = stringify.configure({ bigint: false })
+    const strict = stringify.configure({ strict: true })
+    for (const value of [foreign, subclass, disguised]) {
+      for (const space of [undefined, 2]) {
+        assert.equal(serialize(value, null, space), '{}')
+        assert.throws(() => strict(value, null, space), {
+          message: 'Object can not safely be stringified. Received type bigint (1)'
+        })
       }
     }
     assert.end()

@@ -82,7 +82,7 @@ function wrapInQuotes (value) {
  * @param {string} separator
  * @param {number} maximumBreadth
  * @param {boolean | 'string'} bigint
- * @param {((value: number | bigint) => never) | undefined} fail
+ * @param {((value: number | bigint) => string) | undefined} fail
  * @param {string} type
  */
 function stringifyTypedArray (array, separator, maximumBreadth, bigint, fail, type) {
@@ -90,7 +90,9 @@ function stringifyTypedArray (array, separator, maximumBreadth, bigint, fail, ty
     maximumBreadth = array.length
   }
   const whitespace = separator === ',' ? '' : ' '
-  if (type[0] === 'F') {
+  const bigintDisabled = bigint === false && type[0] === 'B'
+  if (type[0] === 'F' || bigintDisabled) {
+    if (bigintDisabled && fail === undefined) return ''
     let value = array[0]
     let res = `"0":${whitespace}${Number.isFinite(value) ? value : fail ? fail(value) : 'null'}`
     for (let i = 1; i < maximumBreadth; i++) {
@@ -282,6 +284,7 @@ function configure (options) {
   const maximumDepth = getPositiveIntegerOption(options, 'maximumDepth')
   const maximumBreadth = getPositiveIntegerOption(options, 'maximumBreadth')
   const safe = getBooleanOption(options, 'safe', false)
+  const failTypedArray = safe && fail ? makeSafe(fail) : fail
 
   let stringifyFnReplacer = function (key, parent, stack, replacer, spacer, indentation) {
     let value = parent[key]
@@ -545,10 +548,10 @@ function configure (options) {
     let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
     const typedArrayType = getTypedArrayType(value)
     if (typedArrayType !== undefined) {
-      res += stringifyTypedArray(/** @type {ArrayLike<number | bigint>} */ (value), join, maximumBreadth, bigint, fail, typedArrayType)
+      res += stringifyTypedArray(/** @type {ArrayLike<number | bigint>} */ (value), join, maximumBreadth, bigint, failTypedArray, typedArrayType)
       keys = keys.slice(/** @type {{length: number}} */ (value).length)
       maximumPropertiesToStringify -= /** @type {{length: number}} */ (value).length
-      separator = join
+      separator = res === '' ? '' : join
     }
     if (deterministic) {
       keys = sort(keys, comparator)
@@ -662,10 +665,10 @@ function configure (options) {
     let maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
     const typedArrayType = hasLength ? getTypedArrayType(value) : undefined
     if (typedArrayType !== undefined) {
-      res += stringifyTypedArray(/** @type {ArrayLike<number | bigint>} */ (value), ',', maximumBreadth, bigint, fail, typedArrayType)
+      res += stringifyTypedArray(/** @type {ArrayLike<number | bigint>} */ (value), ',', maximumBreadth, bigint, failTypedArray, typedArrayType)
       keys = keys.slice(/** @type {{length: number}} */ (value).length)
       maximumPropertiesToStringify -= /** @type {{length: number}} */ (value).length
-      separator = ','
+      separator = res === '' ? '' : ','
     }
     if (deterministic) {
       keys = sort(keys, comparator)

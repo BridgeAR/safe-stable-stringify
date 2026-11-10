@@ -2,6 +2,9 @@
 
 ## Next
 
+- Apply `bigint: false` and strict mode to BigInt typed-array entries.
+- Report strict-mode errors at their typed-array indices when `safe` is enabled.
+
 - **Breaking change:** Require Node.js 18 or later.
 - Fix ESM imports in Node.js and bundlers, including applications that also use CommonJS.
 
