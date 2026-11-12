@@ -370,6 +370,60 @@ test('circular depths can have multiple digits', /** @param {import('tap').Test}
   assert.end()
 })
 
+test('toJSON accessors are read once', (assert) => {
+  const wrappers = [value => value, value => ({ item: value }), value => [value]]
+  for (const safe of [false, true]) {
+    const serializer = stringify.configure({ safe })
+    for (const inherited of [false, true]) {
+      for (const space of [undefined, 2]) {
+        for (const replacer of [undefined, ['item', 'value'], (key, value) => value]) {
+          for (const wrap of wrappers) {
+            const createInput = () => {
+              let reads = 0
+              const calls = []
+              const holder = Object.defineProperty({}, 'toJSON', {
+                get () {
+                  reads++
+                  /** @this {object} @param {string} key */
+                  function toJSON (key) {
+                    calls.push([this === value, key])
+                    return { value: reads }
+                  }
+                  return toJSON
+                }
+              })
+              const value = inherited ? Object.create(holder) : holder
+              return { input: wrap(value), calls, readCount: () => reads }
+            }
+            const native = createInput()
+            const actual = createInput()
+            // @ts-expect-error Replacer covers both native overloads.
+            const expected = JSON.stringify(native.input, replacer, space)
+            assert.equal(serializer(actual.input, replacer, space), expected)
+            assert.equal(actual.readCount(), 1)
+            assert.same(actual.calls, native.calls, 'hook receives the original value and string key')
+          }
+        }
+      }
+    }
+  }
+  assert.end()
+})
+
+test('cached toJSON hooks can have their own call property', (assert) => {
+  /** @this {{value: number}} @param {string} key */
+  const toJSON = function (key) { return [this.value, key] }
+  toJSON.call = undefined
+  const input = { value: 1, toJSON }
+  for (const space of [undefined, 2]) {
+    for (const replacer of [undefined, ['value'], (key, value) => value]) {
+      // @ts-expect-error Replacer covers both native overloads.
+      assert.equal(stringify(input, replacer, space), JSON.stringify(input, replacer, space))
+    }
+  }
+  assert.end()
+})
+
 test('toJSON receives array keys as string', /** @param {import('tap').Test} assert */ (assert) => {
   for (const safe of [false, true]) {
     const serializer = stringify.configure({ safe })
