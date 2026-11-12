@@ -289,8 +289,11 @@ function configure (options) {
   let stringifyFnReplacer = function (key, parent, stack, replacer, spacer, indentation) {
     let value = parent[key]
 
-    if (typeof value === 'object' && value !== null && typeof value.toJSON === 'function') {
-      value = safe ? callSafe(value.toJSON, value, key) : value.toJSON(key)
+    if (typeof value === 'object' && value !== null) {
+      const toJSON = value.toJSON
+      if (typeof toJSON === 'function') {
+        value = safe ? callSafe(toJSON, value, key) : Reflect.apply(toJSON, value, [key])
+      }
     }
     value = replacer.call(parent, key, value)
 
@@ -394,9 +397,10 @@ function configure (options) {
     if (value === null) {
       return 'null'
     }
-    if (typeof /** @type {ToJSON} */ (value).toJSON === 'function') {
+    const toJSON = /** @type {ToJSON} */ (value).toJSON
+    if (typeof toJSON === 'function') {
       if (typeof key === 'number') key = String(key)
-      const jsonValue = safe ? callSafe(/** @type {ToJSON} */ (value).toJSON, value, key) : /** @type {ToJSON} */ (value).toJSON(key)
+      const jsonValue = safe ? callSafe(toJSON, value, key) : Reflect.apply(toJSON, value, [key])
       if (typeof jsonValue !== 'object') {
         return stringifyPrimitive(jsonValue)
       }
@@ -485,9 +489,10 @@ function configure (options) {
     if (value === null) {
       return 'null'
     }
-    if (typeof /** @type {ToJSON} */ (value).toJSON === 'function') {
+    const toJSON = /** @type {ToJSON} */ (value).toJSON
+    if (typeof toJSON === 'function') {
       if (typeof key === 'number') key = String(key)
-      const jsonValue = safe ? callSafe(/** @type {ToJSON} */ (value).toJSON, value, key) : /** @type {ToJSON} */ (value).toJSON(key)
+      const jsonValue = safe ? callSafe(toJSON, value, key) : Reflect.apply(toJSON, value, [key])
       if (typeof jsonValue !== 'object') {
         return stringifyPrimitive(jsonValue)
       }
@@ -602,9 +607,10 @@ function configure (options) {
     if (value === null) {
       return 'null'
     }
-    if (typeof /** @type {ToJSON} */ (value).toJSON === 'function') {
+    const toJSON = /** @type {ToJSON} */ (value).toJSON
+    if (typeof toJSON === 'function') {
       if (typeof key === 'number') key = String(key)
-      const jsonValue = safe ? callSafe(/** @type {ToJSON} */ (value).toJSON, value, key) : /** @type {ToJSON} */ (value).toJSON(key)
+      const jsonValue = safe ? callSafe(toJSON, value, key) : Reflect.apply(toJSON, value, [key])
       // Prevent calling `toJSON` again
       if (typeof jsonValue !== 'object') {
         return stringifyPrimitive(jsonValue)
