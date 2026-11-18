@@ -182,7 +182,8 @@ function getPositiveIntegerOption (options, key) {
     if (typeof value !== 'number') {
       throw new TypeError(`The "${key}" argument must be of type number`)
     }
-    if (!Number.isInteger(value)) {
+    // Infinity is the documented default, so it is accepted as well.
+    if (!Number.isInteger(value) && value !== Infinity) {
       throw new TypeError(`The "${key}" argument must be an integer`)
     }
     if (value < 1) {

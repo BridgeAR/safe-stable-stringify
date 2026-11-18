@@ -1676,6 +1676,19 @@ test('should throw when maximumBreadth receives malformed input', (assert) => {
   assert.end()
 })
 
+test('maximumDepth and maximumBreadth accept the default Infinity', (assert) => {
+  const input = { a: [1, 2, 3, { b: { c: [4, 5] } }], d: 6 }
+  const expected = stringify.configure({})(input)
+  assert.equal(stringify.configure({ maximumDepth: Infinity })(input), expected)
+  assert.equal(stringify.configure({ maximumBreadth: Infinity })(input), expected)
+  assert.equal(stringify.configure({ maximumDepth: Infinity, maximumBreadth: Infinity })(input, null, 2), stringify(input, null, 2))
+  for (const value of [-Infinity, NaN]) {
+    assert.throws(() => stringify.configure({ maximumDepth: value }))
+    assert.throws(() => stringify.configure({ maximumBreadth: value }))
+  }
+  assert.end()
+})
+
 test('check that all single characters are identical to JSON.stringify', (assert) => {
   for (let i = 0; i < 2 ** 16; i++) {
     const string = String.fromCharCode(i)
