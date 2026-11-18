@@ -12,8 +12,19 @@ const strEscapeLength = Number(nodeVersion?.slice(0, nodeVersion.indexOf('.'))) 
 // Escape C0 control characters, double quotes, the backslash and every code
 // unit with a numeric value in the inclusive range 0xD800 to 0xDFFF.
 function strEscape (str) {
+  const length = str.length
+  // A plain loop is faster than the regular expression for short strings.
+  if (length < 10) {
+    for (let i = 0; i < length; i++) {
+      const code = str.charCodeAt(i)
+      if (code < 32 || code === 34 || code === 92 || (code & 0xf800) === 0xd800) {
+        return JSON.stringify(str)
+      }
+    }
+    return `"${str}"`
+  }
   // Native escaping is faster for longer strings on Node.js 22 and later.
-  if (str.length < strEscapeLength && !strEscapeSequencesRegExp.test(str)) {
+  if (length < strEscapeLength && !strEscapeSequencesRegExp.test(str)) {
     return `"${str}"`
   }
   return JSON.stringify(str)
