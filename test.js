@@ -1340,6 +1340,35 @@ test('negative spacer length', function (assert) {
   assert.end()
 })
 
+test('Number and String objects as spacer', function (assert) {
+  const input = { a: [0] }
+  const spacers = [
+    Object(2), Object(11), Object(-1), Object('--'), Object(' '.repeat(11)),
+    runInNewContext('Object(3)'), runInNewContext('Object("\\t")'),
+    // Not a Number or String object: no indentation.
+    Object.create(Number.prototype), Object.create(String.prototype), {}
+  ]
+  for (const space of spacers) {
+    assert.equal(stringify(input, null, space), JSON.stringify(input, null, space))
+  }
+  assert.end()
+})
+
+test('Number and String objects in the replacer array', function (assert) {
+  const input = { a: 1, b: 2, 1: 3, 2: 4 }
+  const replacers = [
+    [Object('a'), Object(1)],
+    [runInNewContext('Object("b")'), runInNewContext('Object(2)')],
+    // Not a Number or String object: ignored.
+    [Object.create(Number.prototype), Object.create(String.prototype), {}, null, true, 'a']
+  ]
+  for (const replacer of replacers) {
+    assert.equal(stringify(input, replacer), JSON.stringify(input, replacer))
+    assert.equal(stringify(input, replacer, 2), JSON.stringify(input, replacer, 2))
+  }
+  assert.end()
+})
+
 test('indent properly; regression test for issue #16', function (assert) {
   const o = {
     collections: {},

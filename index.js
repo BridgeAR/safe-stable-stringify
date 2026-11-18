@@ -1,6 +1,8 @@
 'use strict'
 
 const { hasOwnProperty } = Object.prototype
+const { valueOf: numberValueOf } = Number.prototype
+const { valueOf: stringValueOf } = String.prototype
 
 /** @typedef {{toJSON: (key: string) => unknown}} ToJSON */
 
@@ -199,10 +201,25 @@ function getItemCount (number) {
   return `${number} items`
 }
 
+// Detects Number and String wrapper objects, also from other realms.
+function isBoxed (value, valueOf) {
+  try {
+    valueOf.call(value)
+    return true
+  } catch {
+    return false
+  }
+}
+
 function getUniqueReplacerSet (replacerArray) {
   const replacerSet = new Set()
   for (const value of replacerArray) {
-    if (typeof value === 'string' || typeof value === 'number') {
+    if (
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      (typeof value === 'object' && value !== null &&
+        (isBoxed(value, numberValueOf) || isBoxed(value, stringValueOf)))
+    ) {
       replacerSet.add(String(value))
     }
   }
@@ -711,6 +728,14 @@ function configure (options) {
   function stringify (value, replacer, space) {
     if (arguments.length > 1) {
       let spacer = ''
+      // Unwrap Number and String objects like JSON.stringify does.
+      if (typeof space === 'object' && space !== null) {
+        if (isBoxed(space, numberValueOf)) {
+          space = Number(space)
+        } else if (isBoxed(space, stringValueOf)) {
+          space = String(space)
+        }
+      }
       if (typeof space === 'number') {
         spacer = ' '.repeat(Math.max(0, Math.min(space, 10)))
       } else if (typeof space === 'string') {
