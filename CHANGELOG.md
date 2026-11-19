@@ -1,5 +1,11 @@
 # Changelog
 
+## v3.0.2
+
+- Read the `toJSON` property once when checking for and calling the serialization hook.
+- Accept explicit `Infinity` for `maximumDepth` and `maximumBreadth` to leave them unlimited.
+- Speed up JSON escaping for strings shorter than 10 UTF-16 code units.
+
 ## v3.0.1
 
 - Apply `bigint: false` and strict mode to BigInt typed-array entries.

@@ -131,48 +131,46 @@ with `JSON.stringify()`.
 
 ## Performance / Benchmarks
 
-(Apple M4 Max, macOS 26.6.2, Node.js 26.3.1, V8 14.6.202.34-node.20)
+(Apple M4 Max; Node v26.13.1; V8 14.6.202.34-node.40)
 
 ```text
-Apple M4 Max; Node v26.3.1; V8 14.6.202.34-node.20
-simple: simple object              4,280,054 ops/sec (7 runs, CV 1.21%)
-simple: circular                   1,867,764 ops/sec (7 runs, CV 0.90%)
-simple: deep                       31,783 ops/sec (7 runs, CV 1.85%)
-simple: deep circular              31,095 ops/sec (7 runs, CV 1.07%)
-replacer: simple object            2,847,302 ops/sec (7 runs, CV 1.13%)
-replacer: circular                 1,264,209 ops/sec (7 runs, CV 0.47%)
-replacer: deep                     29,244 ops/sec (7 runs, CV 0.77%)
-replacer: deep circular            28,500 ops/sec (7 runs, CV 0.76%)
-array: simple object               4,433,315 ops/sec (7 runs, CV 1.20%)
-array: circular                    4,400,683 ops/sec (7 runs, CV 0.82%)
-array: deep                        4,410,383 ops/sec (7 runs, CV 0.50%)
-array: deep circular               4,435,182 ops/sec (7 runs, CV 0.52%)
-full replacer: simple object       2,675,568 ops/sec (7 runs, CV 0.81%)
-full replacer: circular            1,226,915 ops/sec (7 runs, CV 0.75%)
-full replacer: deep                27,826 ops/sec (7 runs, CV 0.99%)
-full replacer: deep circular       27,239 ops/sec (7 runs, CV 1.96%)
-full array: simple object          3,781,217 ops/sec (7 runs, CV 0.95%)
-full array: circular               3,771,576 ops/sec (7 runs, CV 1.36%)
-full array: deep                   3,781,851 ops/sec (7 runs, CV 1.60%)
-full array: deep circular          3,835,795 ops/sec (7 runs, CV 0.93%)
-indentation: simple object         3,971,352 ops/sec (7 runs, CV 1.33%)
-indentation: circular              1,810,550 ops/sec (7 runs, CV 1.06%)
-indentation: deep                  31,776 ops/sec (7 runs, CV 1.20%)
-indentation: deep circular         31,396 ops/sec (7 runs, CV 1.41%)
+simple: simple object              4,599,135 ops/sec (7 runs, CV 0.89%)
+simple: circular                   2,014,569 ops/sec (7 runs, CV 0.58%)
+simple: deep                       34,131 ops/sec (7 runs, CV 1.25%)
+simple: deep circular              33,217 ops/sec (7 runs, CV 0.80%)
+replacer: simple object            2,982,280 ops/sec (7 runs, CV 0.64%)
+replacer: circular                 1,358,950 ops/sec (7 runs, CV 0.62%)
+replacer: deep                     30,759 ops/sec (7 runs, CV 1.47%)
+replacer: deep circular            30,460 ops/sec (7 runs, CV 1.14%)
+array: simple object               4,589,943 ops/sec (7 runs, CV 0.57%)
+array: circular                    4,545,994 ops/sec (7 runs, CV 1.30%)
+array: deep                        4,539,061 ops/sec (7 runs, CV 1.26%)
+array: deep circular               4,582,763 ops/sec (7 runs, CV 0.72%)
+full replacer: simple object       2,765,086 ops/sec (7 runs, CV 0.68%)
+full replacer: circular            1,290,254 ops/sec (7 runs, CV 0.57%)
+full replacer: deep                30,397 ops/sec (7 runs, CV 0.58%)
+full replacer: deep circular       29,887 ops/sec (7 runs, CV 0.89%)
+full array: simple object          3,944,454 ops/sec (7 runs, CV 1.26%)
+full array: circular               3,937,732 ops/sec (7 runs, CV 0.73%)
+full array: deep                   3,956,280 ops/sec (7 runs, CV 0.54%)
+full array: deep circular          3,952,899 ops/sec (7 runs, CV 0.62%)
+indentation: simple object         4,243,745 ops/sec (7 runs, CV 0.53%)
+indentation: circular              1,911,019 ops/sec (7 runs, CV 0.62%)
+indentation: deep                  33,746 ops/sec (7 runs, CV 1.25%)
+indentation: deep circular         33,145 ops/sec (7 runs, CV 1.01%)
 ```
 
 Comparing `safe-stable-stringify` with known alternatives:
 
 ```text
-Apple M4 Max; Node v26.3.1; V8 14.6.202.34-node.20
-fastest-stable-stringify           73,060 ops/sec (7 runs, CV 0.30%)
-fast-json-stable-stringify         66,953 ops/sec (7 runs, CV 0.87%)
-json-stable-stringify              50,656 ops/sec (7 runs, CV 0.48%)
-fast-stable-stringify              72,668 ops/sec (7 runs, CV 0.94%)
-faster-stable-stringify            64,879 ops/sec (7 runs, CV 0.80%)
-json-stringify-deterministic       45,529 ops/sec (7 runs, CV 0.72%)
-fast-safe-stringify                59,107 ops/sec (7 runs, CV 0.55%)
-safe-stable-stringify              75,892 ops/sec (7 runs, CV 0.48%)
+fastest-stable-stringify           74,006 ops/sec (7 runs, CV 1.00%)
+fast-json-stable-stringify         66,591 ops/sec (7 runs, CV 0.47%)
+json-stable-stringify              50,832 ops/sec (7 runs, CV 0.65%)
+fast-stable-stringify              71,859 ops/sec (7 runs, CV 1.22%)
+faster-stable-stringify            63,885 ops/sec (7 runs, CV 1.00%)
+json-stringify-deterministic       44,902 ops/sec (7 runs, CV 0.99%)
+fast-safe-stringify                58,271 ops/sec (7 runs, CV 0.68%)
+safe-stable-stringify              78,131 ops/sec (7 runs, CV 2.01%)
 ```
 
 The `fast-safe-stringify` comparison uses its stable implementation.
@@ -182,15 +180,14 @@ The `fast-safe-stringify` comparison uses its stable implementation.
 Serializing a telemetry record with binary sensor data, a Date, and a Buffer:
 
 ```text
-Apple M4 Max; Node v26.3.1; V8 14.6.202.34-node.20
-fastest-stable-stringify           69,502 ops/sec (7 runs, CV 0.73%)
-fast-json-stable-stringify         63,260 ops/sec (7 runs, CV 0.31%)
-json-stable-stringify              46,499 ops/sec (7 runs, CV 0.75%)
-fast-stable-stringify              116,091 ops/sec (7 runs, CV 0.68%)
-faster-stable-stringify            62,078 ops/sec (7 runs, CV 0.65%)
-json-stringify-deterministic       33,567 ops/sec (7 runs, CV 0.57%)
-fast-safe-stringify                56,618 ops/sec (7 runs, CV 0.57%)
-safe-stable-stringify              126,114 ops/sec (7 runs, CV 0.48%)
+fastest-stable-stringify           67,370 ops/sec (7 runs, CV 0.84%)
+fast-json-stable-stringify         62,801 ops/sec (7 runs, CV 0.80%)
+json-stable-stringify              46,316 ops/sec (7 runs, CV 1.16%)
+fast-stable-stringify              116,191 ops/sec (7 runs, CV 0.33%)
+faster-stable-stringify            62,259 ops/sec (7 runs, CV 0.43%)
+json-stringify-deterministic       33,639 ops/sec (7 runs, CV 0.37%)
+fast-safe-stringify                57,117 ops/sec (7 runs, CV 0.63%)
+safe-stable-stringify              127,638 ops/sec (7 runs, CV 0.44%)
 ```
 
 ### Typed arrays and BigInt
@@ -203,11 +200,11 @@ fastest-stable-stringify: BigInt is not supported
 fast-json-stable-stringify: BigInt is not supported
 fast-stable-stringify: BigInt is not supported
 faster-stable-stringify: BigInt is not supported
-Apple M4 Max; Node v26.3.1; V8 14.6.202.34-node.20
-json-stable-stringify              39,849 ops/sec (7 runs, CV 1.23%)
-json-stringify-deterministic       43,579 ops/sec (7 runs, CV 0.46%)
-fast-safe-stringify                42,583 ops/sec (7 runs, CV 0.85%)
-safe-stable-stringify              113,681 ops/sec (7 runs, CV 0.87%)
+Apple M4 Max; Node v26.13.1; V8 14.6.202.34-node.40
+json-stable-stringify              39,740 ops/sec (7 runs, CV 0.78%)
+json-stringify-deterministic       43,808 ops/sec (7 runs, CV 0.39%)
+fast-safe-stringify                42,805 ops/sec (7 runs, CV 0.52%)
+safe-stable-stringify              114,074 ops/sec (7 runs, CV 0.44%)
 ```
 
 ## Acknowledgements
