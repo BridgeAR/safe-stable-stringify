@@ -1,16 +1,16 @@
-interface StringifyFunction {
-  (value: undefined | symbol | ((...args: unknown[]) => unknown), replacer?: stringify.Replacer, space?: string | number): undefined
-  (value: string | number | unknown[] | null | boolean | object, replacer?: stringify.Replacer, space?: string | number): string
-  (value: unknown, replacer?: ((key: string, value: unknown) => unknown) | (number | string)[] | null | undefined, space?: string | number): string | undefined
-}
-
-declare const stringify: StringifyFunction & {
-  configure(options: stringify.StringifyOptions): StringifyFunction
+declare const stringify: stringify.StringifyFunction & {
+  configure(options: stringify.StringifyOptions): stringify.StringifyFunction
   stringify: typeof stringify
   default: typeof stringify
 }
 
 declare namespace stringify {
+  export interface StringifyFunction {
+    (value: undefined | symbol | ((...args: unknown[]) => unknown), replacer?: Replacer, space?: string | number): undefined
+    (value: string | number | unknown[] | null | boolean | object, replacer?: Replacer, space?: string | number): string
+    (value: unknown, replacer?: ((key: string, value: unknown) => unknown) | (number | string)[] | null | undefined, space?: string | number): string | undefined
+  }
+
   export type Replacer = (number | string)[] | null | undefined | ((key: string, value: unknown) => string | number | boolean | null | object)
 
   export interface StringifyOptions {
