@@ -1,5 +1,5 @@
 import stringify = require('safe-stable-stringify')
-import type { Replacer, StringifyOptions } from 'safe-stable-stringify'
+import type { Replacer, StringifyFunction, StringifyOptions } from 'safe-stable-stringify'
 
 const options: StringifyOptions = { deterministic: false }
 const replacer: Replacer = ['value']
@@ -16,6 +16,10 @@ const configured = stringify.configure(options)
 const configuredResult: string = configured('value')
 const omitted: undefined = configured(undefined)
 configured({ configuredResult, omitted })
+
+const typed: StringifyFunction = stringify.configure(options)
+const namespacedTyped: stringify.StringifyFunction = typed
+namespacedTyped({ value: 1 })
 
 // @ts-expect-error
 configured.stringify({ value: 1 })
