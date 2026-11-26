@@ -203,6 +203,25 @@ test('omitted bigint typed array entries preserve property order and breadth',
     assert.end()
   })
 
+test('replacer functions sort extra typed array properties deterministically',
+  /** @param {import('tap').Test} assert */
+  (assert) => {
+    const value = Object.assign(new Uint8Array([1, 2]), { z: 1, a: 2 })
+    const descending = /** @param {string} left @param {string} right */ (left, right) => right.localeCompare(left)
+    const replacer = /** @param {string} key @param {unknown} value */ (key, value) => value
+    for (const [deterministic, expected] of /** @type {const} */ ([
+      [true, { 0: 1, 1: 2, a: 2, z: 1 }],
+      [descending, { 0: 1, 1: 2, z: 1, a: 2 }]
+    ])) {
+      const serialize = stringify.configure({ deterministic })
+      for (const space of [undefined, 2]) {
+        assert.equal(serialize(value, replacer, space), JSON.stringify(expected, null, space))
+        assert.equal(serialize(value, replacer, space), serialize(value, null, space))
+      }
+    }
+    assert.end()
+  })
+
 test('bigint typed array policy uses the intrinsic type',
   /** @param {import('tap').Test} assert */
   (assert) => {
