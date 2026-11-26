@@ -371,8 +371,14 @@ function configure (options) {
         whitespace = ' '
       }
       const maximumPropertiesToStringify = Math.min(keyLength, maximumBreadth)
-      if (deterministic && getTypedArrayType(value) === undefined) {
-        keys = sort(keys, comparator)
+      if (deterministic) {
+        if (getTypedArrayType(value) === undefined) {
+          keys = sort(keys, comparator)
+        } else if (keyLength > value.length) {
+          // Keep the indices in order and only sort the extra properties.
+          const indices = keys.slice(0, value.length)
+          keys = indices.concat(sort(keys.slice(value.length), comparator))
+        }
       }
       stack.push(value)
       for (let i = 0; i < maximumPropertiesToStringify; i++) {
